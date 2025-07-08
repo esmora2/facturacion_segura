@@ -1,0 +1,14 @@
+<h2>Login</h2>
+{% if form.errors %}
+<p style="color:red;">Credenciales inválidas.</p>
+{% endif %}
+
+{% if request.GET.inactive %}
+<p style="color:red;">Su sesión ha finalizado, contacte con el administrador.</p>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Login</button>
+</form>

@@ -1,0 +1,19 @@
+<h2>Lista de Clientes</h2>
+<table border="1">
+  <tr>
+    <th>Nombre</th>
+    <th>Email</th>
+    <th>Teléfono</th>
+    <th>Rol</th>
+    <th>Activo</th>
+  </tr>
+  {% for cliente in clientes %}
+  <tr>
+    <td>{{ cliente.nombre }}</td>
+    <td>{{ cliente.email }}</td>
+    <td>{{ cliente.telefono }}</td>
+    <td>{{ cliente.roles }}</td>
+    <td>{{ cliente.activo }}</td>
+  </tr>
+  {% endfor %}
+</table>

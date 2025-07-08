@@ -1,0 +1,28 @@
+<h2>Lista de Facturas</h2>
+<table border="1">
+  <tr>
+    <th>ID</th>
+    <th>Creador</th>
+    <th>Fecha</th>
+    <th>Anulada</th>
+    <th>Acciones</th>
+  </tr>
+  {% for factura in facturas %}
+  <tr>
+    <td>{{ factura.id }}</td>
+    <td>{{ factura.creador.username }}</td>
+    <td>{{ factura.fecha }}</td>
+    <td>{{ factura.anulada }}</td>
+    <td>
+      {% if factura.puede_eliminar_usuario %}
+        <form method="post" action="{% url 'eliminar_factura' factura.id %}">
+            {% csrf_token %}
+            <button type="submit">Eliminar</button>
+        </form>
+        {% else %}
+        No autorizado
+        {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
