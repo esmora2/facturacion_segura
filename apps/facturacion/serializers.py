@@ -24,8 +24,8 @@ class FacturaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Factura
-        fields = ['id', 'creador', 'cliente', 'fecha', 'anulada', 'items']
-        read_only_fields = ['id', 'creador', 'fecha', 'anulada']
+        fields = ['id', 'creador', 'cliente', 'fecha', 'estado', 'numero_factura', 'anulada', 'items']
+        read_only_fields = ['id', 'creador', 'fecha', 'numero_factura', 'anulada']
 
     def validate(self, attrs):
         if not attrs.get('items'):
@@ -43,3 +43,32 @@ class FacturaSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             FacturaItem.objects.create(factura=factura, **item_data)
         return factura
+
+    def update(self, instance, validated_data):
+        """Solo permitir actualización si está en borrador"""
+        if not instance.puede_editar():
+            raise serializers.ValidationError("No se puede editar una factura que ya ha sido emitida")
+        
+        items_data = validated_data.pop('items', None)
+        
+        # Actualizar campos básicos
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Si se proporcionan items, actualizar la relación
+        if items_data is not None:
+            # Primero restaurar el stock de los items actuales
+            for item in instance.items.all():
+                producto = item.producto
+                producto.stock += item.cantidad
+                producto.save()
+            
+            # Eliminar items existentes
+            instance.items.all().delete()
+            
+            # Crear nuevos items
+            for item_data in items_data:
+                FacturaItem.objects.create(factura=instance, **item_data)
+        
+        return instance

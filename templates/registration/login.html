@@ -1,14 +1,50 @@
-<h2>Login</h2>
-{% if form.errors %}
-<p style="color:red;">Credenciales inválidas.</p>
-{% endif %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturación - Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .form-group { margin: 15px 0; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h2>Sistema de Facturación Segura</h2>
+    
+    {% if form.errors %}
+        <div class="error">Credenciales inválidas. Por favor, verifique su usuario y contraseña.</div>
+    {% endif %}
 
-{% if request.GET.inactive %}
-<p style="color:red;">Su sesión ha finalizado, contacte con el administrador.</p>
-{% endif %}
+    {% if request.GET.inactive %}
+        <div class="error">Su sesión ha finalizado, contacte con el administrador.</div>
+    {% endif %}
 
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Login</button>
-</form>
+    {% if request.GET.deleted %}
+        <div class="error">Su sesión ha finalizado, contacte con el administrador.</div>
+    {% endif %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="error">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Usuario:</label>
+            {{ form.username }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Contraseña:</label>
+            {{ form.password }}
+        </div>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+</body>
+</html>

@@ -15,13 +15,22 @@ from .serializers import FacturaSerializer
 from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
+from apps.usuarios.permissions import FacturaPermission
 
 class FacturaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para el módulo de Facturación.
+    Acceso permitido solo a: Administrador, Ventas
+    """
     queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, FacturaPermission]
 
     def get_queryset(self):
+        """
+        Filtrar queryset basado en el rol del usuario.
+        Solo Administradores y personal de Ventas pueden ver facturas.
+        """
         user = self.request.user
         if user.is_superuser or user.role in ['Administrador', 'Ventas']:
             return Factura.objects.all()
@@ -30,9 +39,25 @@ class FacturaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(creador=self.request.user)
 
+    def perform_update(self, serializer):
+        """Solo permitir actualización si la factura está en borrador"""
+        instance = self.get_object()
+        if not instance.puede_editar():
+            raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+        serializer.save()
+
+    def perform_partial_update(self, serializer):
+        """Solo permitir actualización parcial si la factura está en borrador"""
+        instance = self.get_object()
+        if not instance.puede_editar():
+            raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+        serializer.save()
+
     def perform_destroy(self, instance):
         if not instance.puede_eliminar(self.request.user):
             raise PermissionDenied("No tienes permiso para eliminar esta factura")
+        if not instance.puede_editar():
+            raise PermissionDenied("No se puede eliminar una factura que ya ha sido emitida")
         instance.delete()
 
     @action(detail=True, methods=['post'])
@@ -135,3 +160,30 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 'data': data
             }
         })
+
+    @action(detail=True, methods=['post'])
+    def emitir(self, request, pk=None):
+        """Emitir una factura (cambiar de BORRADOR a EMITIDA)"""
+        factura = self.get_object()
+        if factura.estado != 'BORRADOR':
+            return Response({"error": "Solo se pueden emitir facturas en estado borrador"}, status=400)
+        factura.emitir()
+        return Response({"status": "Factura emitida correctamente", "numero": factura.numero_factura})
+
+    @action(detail=True, methods=['post'])
+    def marcar_pagada(self, request, pk=None):
+        """Marcar una factura como pagada"""
+        factura = self.get_object()
+        if factura.estado != 'EMITIDA':
+            return Response({"error": "Solo se pueden marcar como pagadas las facturas emitidas"}, status=400)
+        factura.marcar_pagada()
+        return Response({"status": "Factura marcada como pagada"})
+
+    @action(detail=True, methods=['post'])
+    def anular_factura(self, request, pk=None):
+        """Anular una factura"""
+        factura = self.get_object()
+        if not factura.puede_anular():
+            return Response({"error": "Esta factura no puede ser anulada"}, status=400)
+        factura.anular()
+        return Response({"status": "Factura anulada correctamente"})
