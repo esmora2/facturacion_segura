@@ -27,6 +27,12 @@ class FacturaViewSet(viewsets.ModelViewSet):
             return Factura.objects.all()
         return Factura.objects.none()
 
+    def list(self, request, *args, **kwargs):
+        user = self.request.user
+        if not (user.is_superuser or user.role in ['Administrador', 'Ventas']):
+            raise PermissionDenied("No tienes permiso para acceder a las facturas")
+        return super().list(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(creador=self.request.user)
 
@@ -117,6 +123,9 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def metrics(self, request):
+        user = self.request.user
+        if not (user.is_superuser or user.role in ['Administrador', 'Ventas']):
+            raise PermissionDenied("No tienes permiso para acceder a las métricas de facturas")
         end_date = timezone.now().date()
         start_date = end_date - timedelta(days=6)
         facturas_por_dia = Factura.objects.filter(
