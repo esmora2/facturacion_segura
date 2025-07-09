@@ -1,9 +1,11 @@
 from django.db import models, transaction
 from django.conf import settings
 from apps.productos.models import Producto
+from apps.clientes.models import Cliente
 
 class Factura(models.Model):
     creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     anulada = models.BooleanField(default=False)
 
@@ -39,13 +41,11 @@ class FacturaItem(models.Model):
         creating = self.pk is None
         super().save(*args, **kwargs)
         if creating and not self.factura.anulada:
-            # Al crear, reducir stock
             producto = self.producto
             producto.stock -= self.cantidad
             producto.save()
 
     def delete(self, *args, **kwargs):
-        # Opcional: al borrar el item de la factura se devuelve stock
         producto = self.producto
         producto.stock += self.cantidad
         producto.save()
