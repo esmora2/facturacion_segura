@@ -25,9 +25,49 @@ class Factura(models.Model):
         """Una factura solo puede editarse si está en estado BORRADOR"""
         return self.estado == 'BORRADOR'
     
+    def puede_editar_usuario(self, user):
+        """
+        Determina si un usuario puede editar esta factura.
+        Solo pueden editar:
+        - El usuario que la creó
+        - Un usuario con rol Administrador
+        - Superusuarios
+        Y además debe estar en estado BORRADOR
+        """
+        if not self.puede_editar():
+            return False
+        
+        if user.is_superuser:
+            return True
+        if user.role == 'Administrador':
+            return True
+        if self.creador == user:
+            return True
+        return False
+    
     def puede_anular(self):
         """Una factura puede anularse si está EMITIDA o PAGADA"""
         return self.estado in ['EMITIDA', 'PAGADA']
+    
+    def puede_anular_usuario(self, user):
+        """
+        Determina si un usuario puede anular esta factura.
+        Solo pueden anular:
+        - El usuario que la creó
+        - Un usuario con rol Administrador
+        - Superusuarios
+        Y además debe estar en estado EMITIDA o PAGADA
+        """
+        if not self.puede_anular():
+            return False
+        
+        if user.is_superuser:
+            return True
+        if user.role == 'Administrador':
+            return True
+        if self.creador == user:
+            return True
+        return False
     
     def emitir(self):
         """Cambiar estado a EMITIDA y generar número de factura"""

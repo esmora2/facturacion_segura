@@ -46,17 +46,35 @@ class FacturaViewSet(viewsets.ModelViewSet):
         serializer.save(creador=self.request.user)
 
     def perform_update(self, serializer):
-        """Solo permitir actualización si la factura está en borrador"""
+        """
+        Solo permitir actualización si:
+        - La factura está en borrador
+        - El usuario es el creador o un Administrador
+        """
         instance = self.get_object()
-        if not instance.puede_editar():
-            raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+        if not instance.puede_editar_usuario(self.request.user):
+            if not instance.puede_editar():
+                raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+            else:
+                raise PermissionDenied(
+                    "Solo el creador de la factura o un Administrador pueden editarla"
+                )
         serializer.save()
 
     def perform_partial_update(self, serializer):
-        """Solo permitir actualización parcial si la factura está en borrador"""
+        """
+        Solo permitir actualización parcial si:
+        - La factura está en borrador
+        - El usuario es el creador o un Administrador
+        """
         instance = self.get_object()
-        if not instance.puede_editar():
-            raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+        if not instance.puede_editar_usuario(self.request.user):
+            if not instance.puede_editar():
+                raise PermissionDenied("No se puede editar una factura que ya ha sido emitida")
+            else:
+                raise PermissionDenied(
+                    "Solo el creador de la factura o un Administrador pueden editarla"
+                )
         serializer.save()
 
     def perform_destroy(self, instance):
@@ -209,14 +227,20 @@ class FacturaViewSet(viewsets.ModelViewSet):
         """
         Anular una factura y restituir automáticamente el stock.
         Solo facturas EMITIDAS o PAGADAS pueden anularse.
+        Solo el creador o un Administrador pueden anularla.
         """
         factura = self.get_object()
         
-        # Verificar si la factura puede anularse
-        if not factura.puede_anular():
-            return Response({
-                "error": f"Esta factura no puede ser anulada. Estado actual: {factura.get_estado_display()}"
-            }, status=400)
+        # Verificar permisos de usuario
+        if not factura.puede_anular_usuario(request.user):
+            if not factura.puede_anular():
+                return Response({
+                    "error": f"Esta factura no puede ser anulada. Estado actual: {factura.get_estado_display()}"
+                }, status=400)
+            else:
+                return Response({
+                    "error": "Solo el creador de la factura o un Administrador pueden anularla"
+                }, status=403)
         
         # Obtener información de los productos antes de anular (para el response)
         items_info = []
