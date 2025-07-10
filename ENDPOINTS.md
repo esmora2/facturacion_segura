@@ -18,6 +18,62 @@ GET /api/me/
 Authorization: Token <token>
 ```
 
+### Validar Contraseña para Operaciones Críticas ⚠️
+```
+POST /api/auth/validate-password/
+Authorization: Token <token>
+Content-Type: application/json
+{
+    "password": "contraseña_del_usuario"
+}
+
+Response (Éxito):
+{
+    "message": "Contraseña válida",
+    "valid": true,
+    "user": {
+        "id": 1,
+        "username": "usuario",
+        "email": "usuario@example.com",
+        "role": "Administrador"
+    }
+}
+
+Response (Error):
+{
+    "error": "Contraseña incorrecta",
+    "valid": false
+}
+```
+
+### Validación de Contraseña para Operaciones Críticas
+```
+POST /api/auth/validate-password/
+Authorization: Token <token>
+Content-Type: application/json
+{
+    "password": "contraseña_del_usuario"
+}
+
+Response Success (200):
+{
+    "message": "Contraseña válida",
+    "valid": true,
+    "user": {
+        "id": 1,
+        "username": "usuario",
+        "email": "user@example.com",
+        "role": "Ventas"
+    }
+}
+
+Response Error (400):
+{
+    "error": "Contraseña incorrecta",
+    "valid": false
+}
+```
+
 ---
 
 ## 👥 GESTIÓN DE USUARIOS (Solo Administradores)

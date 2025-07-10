@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate
 from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -69,3 +70,41 @@ class UserListSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 
                  'role', 'role_display', 'is_active', 'date_joined']
         read_only_fields = ['id', 'date_joined']
+
+
+class PasswordValidationSerializer(serializers.Serializer):
+    """
+    Serializer para validar contraseñas en operaciones críticas
+    """
+    password = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text="Contraseña del usuario para validación"
+    )
+    
+    def validate_password(self, value):
+        """
+        Validar que la contraseña no esté vacía
+        """
+        if not value or value.strip() == '':
+            raise serializers.ValidationError("La contraseña no puede estar vacía")
+        return value
+    
+    def validate(self, attrs):
+        """
+        Validar la contraseña contra el usuario del contexto
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("Usuario no autenticado")
+        
+        password = attrs.get('password')
+        user = authenticate(
+            username=request.user.username,
+            password=password
+        )
+        
+        if user is None or user != request.user:
+            raise serializers.ValidationError("Contraseña incorrecta")
+        
+        return attrs

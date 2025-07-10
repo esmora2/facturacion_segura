@@ -3,12 +3,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from .models import User
 from .serializers import UserSerializer
 from .permissions import AdminOnlyPermission
+import logging
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -17,6 +19,70 @@ def me_view(request):
     user = request.user
     serializer = UserSerializer(user)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def validate_password(request):
+    """
+    Endpoint para validar la contraseña del usuario autenticado.
+    Útil para operaciones críticas como eliminación permanente.
+    
+    Request Body:
+    {
+        "password": "contraseña_del_usuario"
+    }
+    
+    Response:
+    - 200: Contraseña válida
+    - 400: Datos inválidos o contraseña incorrecta
+    - 401: Usuario no autenticado
+    """
+    try:
+        password = request.data.get('password')
+        
+        if not password:
+            return Response({
+                'error': 'La contraseña es requerida',
+                'valid': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validar la contraseña usando authenticate
+        user = authenticate(
+            username=request.user.username,
+            password=password
+        )
+        
+        if user is not None and user == request.user:
+            # Log de seguridad (sin mostrar la contraseña)
+            logger.info(f"Validación de contraseña exitosa para usuario: {request.user.username}")
+            
+            return Response({
+                'message': 'Contraseña válida',
+                'valid': True,
+                'user': {
+                    'id': request.user.id,
+                    'username': request.user.username,
+                    'email': request.user.email,
+                    'role': getattr(request.user, 'role', None)
+                }
+            }, status=status.HTTP_200_OK)
+        
+        else:
+            # Log de seguridad para intentos fallidos
+            logger.warning(f"Intento de validación de contraseña fallido para usuario: {request.user.username}")
+            
+            return Response({
+                'error': 'Contraseña incorrecta',
+                'valid': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error en validación de contraseña: {str(e)}")
+        return Response({
+            'error': 'Error interno del servidor',
+            'valid': False
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserViewSet(viewsets.ModelViewSet):

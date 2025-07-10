@@ -12,7 +12,7 @@ from rest_framework import routers
 from apps.clientes.views_api import ClienteViewSet
 from apps.productos.views_api import ProductoViewSet
 from apps.facturacion.views_api import FacturaViewSet
-from apps.usuarios.views_api import me_view, UserViewSet
+from apps.usuarios.views_api import me_view, UserViewSet, validate_password
 
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -42,6 +42,9 @@ urlpatterns = [
 
     # Endpoint para obtener datos del usuario autenticado
     path('api/me/', me_view, name='api_me'),
+
+    # Endpoint para validar contraseña del usuario autenticado
+    path('api/auth/validate-password/', validate_password, name='validate_password'),
 
     # Rutas API REST Framework
     path('', include(router.urls)),
