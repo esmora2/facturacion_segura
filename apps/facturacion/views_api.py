@@ -206,12 +206,40 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def emitir(self, request, pk=None):
-        """Emitir una factura (cambiar de BORRADOR a EMITIDA)"""
+        """
+        Emitir una factura (cambiar de BORRADOR a EMITIDA).
+        Solo el creador o un Administrador pueden emitir.
+        """
         factura = self.get_object()
+        
+        # Verificar que la factura esté en estado BORRADOR
         if factura.estado != 'BORRADOR':
-            return Response({"error": "Solo se pueden emitir facturas en estado borrador"}, status=400)
+            return Response({
+                "error": f"Solo se pueden emitir facturas en estado borrador. Estado actual: {factura.get_estado_display()}"
+            }, status=400)
+        
+        # Verificar permisos de usuario (solo creador o admin pueden emitir)
+        if not factura.puede_editar_usuario(request.user):
+            return Response({
+                "error": "Solo el creador de la factura o un Administrador pueden emitirla"
+            }, status=403)
+        
+        # Verificar que la factura tenga al menos un item
+        if not factura.items.exists():
+            return Response({
+                "error": "No se puede emitir una factura sin items"
+            }, status=400)
+        
+        # Emitir la factura
         factura.emitir()
-        return Response({"status": "Factura emitida correctamente", "numero": factura.numero_factura})
+        
+        return Response({
+            "status": "Factura emitida correctamente",
+            "factura_id": factura.id,
+            "numero_factura": factura.numero_factura,
+            "estado": factura.estado,
+            "fecha_emision": factura.fecha.isoformat()
+        })
 
     @action(detail=True, methods=['post'])
     def marcar_pagada(self, request, pk=None):

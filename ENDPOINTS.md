@@ -46,34 +46,6 @@ Response (Error):
 }
 ```
 
-### Validación de Contraseña para Operaciones Críticas
-```
-POST /api/auth/validate-password/
-Authorization: Token <token>
-Content-Type: application/json
-{
-    "password": "contraseña_del_usuario"
-}
-
-Response Success (200):
-{
-    "message": "Contraseña válida",
-    "valid": true,
-    "user": {
-        "id": 1,
-        "username": "usuario",
-        "email": "user@example.com",
-        "role": "Ventas"
-    }
-}
-
-Response Error (400):
-{
-    "error": "Contraseña incorrecta",
-    "valid": false
-}
-```
-
 ---
 
 ## 👥 GESTIÓN DE USUARIOS (Solo Administradores)
@@ -330,3 +302,110 @@ Response:
 - **403**: Forbidden - Sin permisos para la operación
 - **404**: Not Found - Recurso no encontrado
 - **500**: Internal Server Error - Error del servidor
+
+---
+
+# 📋 DOCUMENTACIÓN DEL ENDPOINT DE EMISIÓN DE FACTURAS
+
+## Emitir Factura
+
+### Descripción
+Este endpoint permite emitir una factura que ha sido previamente creada y guardada como borrador. Una vez emitida, la factura cambiará su estado a "EMITIDA" y no podrá ser modificada excepto para marcarla como pagada o anularla.
+
+### Endpoint
+```
+POST /api/facturas/{id}/emitir/
+```
+
+### Parámetros
+
+| Nombre | Tipo   | Descripción |
+|--------|--------|-------------|
+| id     | entero | ID de la factura a emitir |
+
+### Headers
+
+| Nombre          | Tipo    | Descripción                        |
+|-----------------|---------|------------------------------------|
+| Authorization   | string  | Token de autenticación del usuario |
+| Content-Type    | string  | Debe ser siempre `application/json`|
+
+### Request Body
+No se requiere cuerpo en la solicitud.
+
+### Respuestas
+
+#### Éxito (200 OK)
+```json
+{
+    "id": 1,
+    "estado": "EMITIDA",
+    "numero_factura": "FAC-000001",
+    "fecha_emision": "2025-07-09T10:30:00Z",
+    "mensaje": "Factura emitida exitosamente."
+}
+```
+
+#### Error - Factura No Encontrada (404 Not Found)
+```json
+{
+    "error": "Factura no encontrada."
+}
+```
+
+#### Error - Estado Inválido (400 Bad Request)
+```json
+{
+    "error": "La factura solo puede ser emitida si está en estado BORRADOR."
+}
+```
+
+#### Error - Sin Permisos (403 Forbidden)
+```json
+{
+    "error": "No tiene permisos para emitir esta factura."
+}
+```
+
+---
+
+## Ejemplo de Uso
+
+### Solicitud
+```
+POST /api/facturas/1/emitir/
+Authorization: Token <token>
+Content-Type: application/json
+```
+
+### Respuesta Exitosa
+```json
+{
+    "id": 1,
+    "estado": "EMITIDA",
+    "numero_factura": "FAC-000001",
+    "fecha_emision": "2025-07-09T10:30:00Z",
+    "mensaje": "Factura emitida exitosamente."
+}
+```
+
+### Respuesta de Error - Factura No Encontrada
+```json
+{
+    "error": "Factura no encontrada."
+}
+```
+
+### Respuesta de Error - Estado Inválido
+```json
+{
+    "error": "La factura solo puede ser emitida si está en estado BORRADOR."
+}
+```
+
+### Respuesta de Error - Sin Permisos
+```json
+{
+    "error": "No tiene permisos para emitir esta factura."
+}
+```
