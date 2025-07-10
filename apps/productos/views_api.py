@@ -8,7 +8,8 @@ from .serializers import ProductoSerializer
 class ProductoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para el módulo de Productos.
-    Acceso permitido solo a: Administrador, Bodega
+    - Administrador, Bodega: Acceso completo (CRUD)
+    - Ventas: Solo lectura (GET)
     """
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
@@ -17,15 +18,19 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filtrar queryset basado en el rol del usuario.
-        Solo Administradores y personal de Bodega pueden ver productos.
+        Administradores, personal de Bodega y personal de Ventas pueden ver productos.
         """
         user = self.request.user
-        if user.is_superuser or user.role in ['Administrador', 'Bodega']:
+        if user.is_superuser or user.role in ['Administrador', 'Bodega', 'Ventas']:
             return Producto.objects.all()
         return Producto.objects.none()
 
     def list(self, request, *args, **kwargs):
+        """
+        Listar productos.
+        Permitido para: Administrador, Bodega, Ventas (solo lectura)
+        """
         user = self.request.user
-        if not (user.is_superuser or user.role in ['Administrador', 'Bodega']):
+        if not (user.is_superuser or user.role in ['Administrador', 'Bodega', 'Ventas']):
             raise PermissionDenied("No tienes permiso para acceder a los productos")
         return super().list(request, *args, **kwargs)

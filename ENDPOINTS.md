@@ -97,13 +97,22 @@ GET  /api/usuarios/roles/                 # Obtener lista de roles disponibles
 
 ---
 
-## 👨‍💼 GESTIÓN DE CLIENTES (Administrador + Secretario)
+## 👨‍💼 GESTIÓN DE CLIENTES
+
+### Permisos de Acceso:
+- **Administrador**: ✅ Acceso completo (CRUD)
+- **Secretario**: ✅ Acceso completo (CRUD)  
+- **Ventas**: ✅ Solo lectura (GET) - ¡NUEVO!
 
 ### Operaciones CRUD Básicas
 ```
-GET    /api/clientes/           # Listar clientes
-POST   /api/clientes/           # Crear cliente
-GET    /api/clientes/{id}/      # Obtener cliente específico
+GET    /api/clientes/           # Listar clientes (Admin, Secretario, Ventas)
+POST   /api/clientes/           # Crear cliente (Solo Admin, Secretario)
+GET    /api/clientes/{id}/      # Obtener cliente específico (Admin, Secretario, Ventas)
+PUT    /api/clientes/{id}/      # Actualizar cliente completo (Solo Admin, Secretario)
+PATCH  /api/clientes/{id}/      # Actualizar cliente parcial (Solo Admin, Secretario)
+DELETE /api/clientes/{id}/      # Eliminar cliente (Solo Admin, Secretario)
+```
 PUT    /api/clientes/{id}/      # Actualizar cliente completo
 PATCH  /api/clientes/{id}/      # Actualizar cliente parcial
 DELETE /api/clientes/{id}/      # Eliminar cliente
@@ -111,16 +120,21 @@ DELETE /api/clientes/{id}/      # Eliminar cliente
 
 ---
 
-## 📦 GESTIÓN DE PRODUCTOS (Administrador + Bodega)
+## 📦 GESTIÓN DE PRODUCTOS
+
+### Permisos de Acceso:
+- **Administrador**: ✅ Acceso completo (CRUD)
+- **Bodega**: ✅ Acceso completo (CRUD)
+- **Ventas**: ✅ Solo lectura (GET) - ¡NUEVO!
 
 ### Operaciones CRUD Básicas
 ```
-GET    /api/productos/          # Listar productos
-POST   /api/productos/          # Crear producto
-GET    /api/productos/{id}/     # Obtener producto específico
-PUT    /api/productos/{id}/     # Actualizar producto completo
-PATCH  /api/productos/{id}/     # Actualizar producto parcial
-DELETE /api/productos/{id}/     # Eliminar producto
+GET    /api/productos/          # Listar productos (Admin, Bodega, Ventas)
+POST   /api/productos/          # Crear producto (Solo Admin, Bodega)
+GET    /api/productos/{id}/     # Obtener producto específico (Admin, Bodega, Ventas)
+PUT    /api/productos/{id}/     # Actualizar producto completo (Solo Admin, Bodega)
+PATCH  /api/productos/{id}/     # Actualizar producto parcial (Solo Admin, Bodega)
+DELETE /api/productos/{id}/     # Eliminar producto (Solo Admin, Bodega)
 ```
 
 ---

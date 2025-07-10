@@ -8,7 +8,8 @@ from .serializers import ClienteSerializer
 class ClienteViewSet(viewsets.ModelViewSet):
     """
     ViewSet para el módulo de Clientes.
-    Acceso permitido solo a: Administrador, Secretario
+    - Administrador, Secretario: Acceso completo (CRUD)
+    - Ventas: Solo lectura (GET)
     """
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
@@ -17,15 +18,19 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filtrar queryset basado en el rol del usuario.
-        Solo Administradores y Secretarios pueden ver clientes.
+        Administradores, Secretarios y personal de Ventas pueden ver clientes.
         """
         user = self.request.user
-        if user.is_superuser or user.role in ['Administrador', 'Secretario']:
+        if user.is_superuser or user.role in ['Administrador', 'Secretario', 'Ventas']:
             return Cliente.objects.all()
         return Cliente.objects.none()
 
     def list(self, request, *args, **kwargs):
+        """
+        Listar clientes.
+        Permitido para: Administrador, Secretario, Ventas (solo lectura)
+        """
         user = self.request.user
-        if not (user.is_superuser or user.role in ['Administrador', 'Secretario']):
+        if not (user.is_superuser or user.role in ['Administrador', 'Secretario', 'Ventas']):
             raise PermissionDenied("No tienes permiso para acceder a los clientes")
         return super().list(request, *args, **kwargs)

@@ -41,11 +41,21 @@ class ClientePermission(BasePermission):
         if request.user.is_superuser:
             return True
         
+        # Acceso completo para Administradores y Secretarios
         if request.user.role in ['Administrador', 'Secretario']:
             return True
         
+        # Acceso de solo lectura para personal de Ventas
+        if request.user.role == 'Ventas':
+            if request.method in ['GET', 'HEAD', 'OPTIONS']:
+                return True
+            else:
+                raise PermissionDenied(
+                    "El personal de Ventas solo puede consultar información de clientes (solo lectura)"
+                )
+        
         raise PermissionDenied(
-            "Solo los Administradores y Secretarios pueden acceder al módulo de Clientes"
+            "Solo los Administradores, Secretarios y personal de Ventas (solo lectura) pueden acceder al módulo de Clientes"
         )
 
 
@@ -59,11 +69,21 @@ class ProductoPermission(BasePermission):
         if request.user.is_superuser:
             return True
         
+        # Acceso completo para Administradores y personal de Bodega
         if request.user.role in ['Administrador', 'Bodega']:
             return True
         
+        # Acceso de solo lectura para personal de Ventas
+        if request.user.role == 'Ventas':
+            if request.method in ['GET', 'HEAD', 'OPTIONS']:
+                return True
+            else:
+                raise PermissionDenied(
+                    "El personal de Ventas solo puede consultar información de productos (solo lectura)"
+                )
+        
         raise PermissionDenied(
-            "Solo los Administradores y personal de Bodega pueden acceder al módulo de Productos"
+            "Solo los Administradores, personal de Bodega y personal de Ventas (solo lectura) pueden acceder al módulo de Productos"
         )
 
 
