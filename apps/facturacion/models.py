@@ -47,22 +47,57 @@ class Factura(models.Model):
             self.save()
 
     def anular(self):
+        """
+        Anular una factura y restituir el stock de todos los productos.
+        Usa transacciones atómicas para garantizar consistencia.
+        """
         if self.puede_anular():
             with transaction.atomic():
+                # Restituir stock de todos los items
                 for item in self.items.all():
                     producto = item.producto
                     producto.stock += item.cantidad
                     producto.save()
+                
+                # Cambiar estado de la factura
                 self.estado = 'ANULADA'
                 self.anulada = True  # Por compatibilidad
                 self.save()
+                
+                return True
+        return False
 
     def puede_eliminar(self, user):
+        """
+        Determina si un usuario puede eliminar esta factura.
+        Solo pueden eliminar:
+        - El usuario que la creó
+        - Un usuario con rol Administrador
+        - Superusuarios
+        """
         if user.is_superuser:
+            return True
+        if user.role == 'Administrador':
             return True
         if self.creador == user:
             return True
         return False
+    
+    def delete(self, *args, **kwargs):
+        """
+        Al eliminar una factura, restituir automáticamente el stock de todos los items.
+        Solo se pueden eliminar facturas en estado BORRADOR.
+        """
+        with transaction.atomic():
+            # Restituir stock de todos los items antes de eliminar
+            for item in self.items.all():
+                if not self.anulada and self.estado != 'ANULADA':
+                    producto = item.producto
+                    producto.stock += item.cantidad
+                    producto.save()
+            
+            # Eliminar la factura (esto eliminará los items automáticamente por CASCADE)
+            super().delete(*args, **kwargs)
 
 class FacturaItem(models.Model):
     factura = models.ForeignKey(Factura, related_name='items', on_delete=models.CASCADE)
@@ -73,15 +108,39 @@ class FacturaItem(models.Model):
         return f"{self.producto.nombre} x {self.cantidad}"
 
     def save(self, *args, **kwargs):
+        """
+        Al crear un item de factura, disminuir el stock del producto.
+        Usa transacciones para garantizar consistencia.
+        """
         creating = self.pk is None
-        super().save(*args, **kwargs)
-        if creating and not self.factura.anulada:
-            producto = self.producto
-            producto.stock -= self.cantidad
-            producto.save()
+        
+        if creating:
+            # Verificar stock disponible antes de crear
+            if self.cantidad > self.producto.stock:
+                raise ValueError(f"Stock insuficiente para {self.producto.nombre}. "
+                               f"Stock disponible: {self.producto.stock}, "
+                               f"Cantidad solicitada: {self.cantidad}")
+        
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            
+            # Solo disminuir stock al crear y si la factura no está anulada
+            if creating and not self.factura.anulada and self.factura.estado != 'ANULADA':
+                producto = self.producto
+                producto.stock -= self.cantidad
+                if producto.stock < 0:
+                    raise ValueError(f"Error: Stock negativo para {producto.nombre}")
+                producto.save()
 
     def delete(self, *args, **kwargs):
-        producto = self.producto
-        producto.stock += self.cantidad
-        producto.save()
-        super().delete(*args, **kwargs)
+        """
+        Al eliminar un item de factura, restituir el stock del producto.
+        Usa transacciones para garantizar consistencia.
+        """
+        with transaction.atomic():
+            # Restituir stock antes de eliminar
+            if not self.factura.anulada and self.factura.estado != 'ANULADA':
+                producto = self.producto
+                producto.stock += self.cantidad
+                producto.save()
+            super().delete(*args, **kwargs)

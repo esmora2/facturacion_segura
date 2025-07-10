@@ -54,10 +54,26 @@ class FacturaViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
+        """
+        Eliminar una factura con validaciones de permisos y restauración de stock.
+        Solo pueden eliminar:
+        - El usuario que la creó
+        - Un usuario con rol Administrador
+        """
+        # Verificar permisos de eliminación
         if not instance.puede_eliminar(self.request.user):
-            raise PermissionDenied("No tienes permiso para eliminar esta factura")
+            raise PermissionDenied(
+                "Solo el creador de la factura o un Administrador pueden eliminarla"
+            )
+        
+        # Solo se pueden eliminar facturas en borrador
         if not instance.puede_editar():
-            raise PermissionDenied("No se puede eliminar una factura que ya ha sido emitida")
+            raise PermissionDenied(
+                "No se puede eliminar una factura que ya ha sido emitida. "
+                "Use la función 'anular' en su lugar."
+            )
+        
+        # La eliminación restaurará automáticamente el stock a través del método delete() de FacturaItem
         instance.delete()
 
     @action(detail=True, methods=['post'])
@@ -181,9 +197,37 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def anular_factura(self, request, pk=None):
-        """Anular una factura"""
+        """
+        Anular una factura y restituir automáticamente el stock.
+        Solo facturas EMITIDAS o PAGADAS pueden anularse.
+        """
         factura = self.get_object()
+        
+        # Verificar si la factura puede anularse
         if not factura.puede_anular():
-            return Response({"error": "Esta factura no puede ser anulada"}, status=400)
-        factura.anular()
-        return Response({"status": "Factura anulada correctamente"})
+            return Response({
+                "error": f"Esta factura no puede ser anulada. Estado actual: {factura.get_estado_display()}"
+            }, status=400)
+        
+        # Obtener información de los productos antes de anular (para el response)
+        items_info = []
+        for item in factura.items.all():
+            items_info.append({
+                "producto": item.producto.nombre,
+                "cantidad_restituida": item.cantidad,
+                "stock_anterior": item.producto.stock,
+                "stock_nuevo": item.producto.stock + item.cantidad
+            })
+        
+        # Anular la factura (esto automáticamente restituye el stock)
+        if factura.anular():
+            return Response({
+                "status": "Factura anulada correctamente",
+                "factura_id": factura.id,
+                "estado": factura.estado,
+                "stock_restituido": items_info
+            })
+        else:
+            return Response({
+                "error": "No se pudo anular la factura"
+            }, status=500)
