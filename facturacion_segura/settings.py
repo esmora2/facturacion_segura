@@ -32,8 +32,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Middlewares personalizados para control de usuarios y roles
     'apps.usuarios.middleware.CheckUserIsActiveMiddleware',
+    'apps.usuarios.middleware.RoleBasedAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'facturacion_segura.urls'

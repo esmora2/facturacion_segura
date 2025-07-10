@@ -12,7 +12,7 @@ from rest_framework import routers
 from apps.clientes.views_api import ClienteViewSet
 from apps.productos.views_api import ProductoViewSet
 from apps.facturacion.views_api import FacturaViewSet
-from apps.usuarios.views_api import me_view
+from apps.usuarios.views_api import me_view, UserViewSet
 
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -21,6 +21,7 @@ router = routers.DefaultRouter()
 router.register(r'api/clientes', ClienteViewSet)
 router.register(r'api/productos', ProductoViewSet)
 router.register(r'api/facturas', FacturaViewSet)
+router.register(r'api/usuarios', UserViewSet)  # Solo para administradores
 
 urlpatterns = [
     # Admin
