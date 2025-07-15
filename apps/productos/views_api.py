@@ -40,7 +40,8 @@ class ProductoViewSet(viewsets.ModelViewSet):
         if not (user.is_superuser or user.role in ['Administrador', 'Bodega', 'Ventas']):
             raise PermissionDenied("No tienes permiso para acceder a los productos")
         return super().list(request, *args, **kwargs)
-        @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
+
+    @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
     def eliminar_con_motivo(self, request, pk=None):
         """
         Eliminar un producto con motivo, registrando auditoría.
