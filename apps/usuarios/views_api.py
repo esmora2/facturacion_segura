@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model, authenticate
 from .models import User
 from .serializers import UserSerializer
 from .permissions import AdminOnlyPermission
+from apps.auditorias.models import LogAuditoria
 import logging
 
 User = get_user_model()
@@ -139,3 +140,29 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({
             'roles': [{'value': choice[0], 'label': choice[1]} for choice in User.ROLE_CHOICES]
         })
+    @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
+    def eliminar_con_motivo(self, request, pk=None):
+    """
+    Eliminar un usuario registrando motivo en auditoría.
+    Solo Administrador puede hacerlo.
+    """
+     user_to_delete = self.get_object()
+     motivo = request.data.get('motivo')
+
+     if not motivo:
+        return Response({'error': 'El motivo es requerido.'}, status=400)
+
+     if user_to_delete == request.user:
+        return Response({'error': 'No puedes eliminarte a ti mismo.'}, status=400)
+
+     LogAuditoria.objects.create(
+        modelo_afectado='Usuario',
+        objeto_id=user_to_delete.id,
+        descripcion_objeto=str(user_to_delete),
+        motivo=motivo,
+        usuario=request.user
+     )
+
+     user_to_delete.delete()
+     return Response({'mensaje': 'Usuario eliminado y registrado en auditoría.'}, status=204)
+

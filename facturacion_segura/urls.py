@@ -6,7 +6,7 @@ from apps.usuarios.views import home
 from apps.clientes.views import lista_clientes
 from apps.productos.views import lista_productos
 from apps.facturacion.views import lista_facturas, eliminar_factura
-
+from apps.auditorias.views_api import LogAuditoriaViewSet
 # Django REST Framework
 from rest_framework import routers
 from apps.clientes.views_api import ClienteViewSet
@@ -22,6 +22,7 @@ router.register(r'api/clientes', ClienteViewSet)
 router.register(r'api/productos', ProductoViewSet)
 router.register(r'api/facturas', FacturaViewSet)
 router.register(r'api/usuarios', UserViewSet)  # Solo para administradores
+router.register(r'api/logs', LogAuditoriaViewSet)
 
 urlpatterns = [
     # Admin
