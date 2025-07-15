@@ -1,5 +1,6 @@
 from django.core.mail import EmailMessage
 from django.conf import settings
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
@@ -25,6 +26,100 @@ class FacturaViewSet(viewsets.ModelViewSet):
     queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
     permission_classes = [IsAuthenticated, FacturaPermission]
+
+    def _generar_pdf_factura(self, factura):
+        """
+        Función auxiliar para generar el PDF de una factura.
+        Retorna el PDF como bytes.
+        """
+        if not factura.cliente:
+            raise ValueError("No se ha asignado un cliente a esta factura")
+        
+        cliente = factura.cliente
+        
+        # Generar PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Encabezado de la empresa
+        elements.append(Paragraph("Sistema de Facturación Segura", styles['Title']))
+        elements.append(Paragraph("RUC: 123456789 | Dirección: Av. Ejemplo 123, Ciudad", styles['Normal']))
+        elements.append(Paragraph("Teléfono: (123) 456-7890 | Email: contacto@facturasegura.com", styles['Normal']))
+        elements.append(Spacer(1, 12))
+
+        # Información de la factura
+        numero_factura = factura.numero_factura if factura.numero_factura else f"#{factura.id}"
+        elements.append(Paragraph(f"Factura {numero_factura}", styles['Heading2']))
+        elements.append(Paragraph(f"Fecha: {factura.fecha.strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+        elements.append(Paragraph(f"Estado: {factura.get_estado_display()}", styles['Normal']))
+        elements.append(Paragraph(f"Cliente: {cliente.nombre}", styles['Normal']))
+        elements.append(Paragraph(f"Email: {cliente.email}", styles['Normal']))
+        if cliente.telefono:
+            elements.append(Paragraph(f"Teléfono: {cliente.telefono}", styles['Normal']))
+        elements.append(Spacer(1, 12))
+
+        # Tabla de ítems
+        data = [['Descripción', 'Cantidad', 'Precio Unitario', 'Subtotal']]
+        subtotal = 0
+        
+        if factura.items.exists():
+            for item in factura.items.all():
+                precio_unitario = item.producto.precio
+                item_subtotal = item.cantidad * precio_unitario
+                subtotal += item_subtotal
+                data.append([
+                    item.producto.nombre,
+                    str(item.cantidad),
+                    f"${precio_unitario:.2f}",
+                    f"${item_subtotal:.2f}"
+                ])
+        else:
+            data.append(['Sin items', '', '', '$0.00'])
+        
+        # Calcular IVA y total
+        iva = subtotal * factura.IVA_PORCENTAJE
+        total = subtotal + iva
+        
+        # Filas de totales
+        data.append(['', '', 'Subtotal', f"${subtotal:.2f}"])
+        data.append(['', '', 'IVA (15%)', f"${iva:.2f}"])
+        data.append(['', '', 'Total', f"${total:.2f}"])
+
+        # Crear y estilizar tabla
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -4), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -4), colors.black),
+            ('FONTNAME', (0, 1), (-1, -4), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -4), 10),
+            # Estilo para las filas de totales
+            ('BACKGROUND', (0, -3), (-1, -3), colors.lightgrey),  # Subtotal
+            ('BACKGROUND', (0, -2), (-1, -2), colors.lightgrey),  # IVA
+            ('BACKGROUND', (0, -1), (-1, -1), colors.darkgrey),   # Total
+            ('FONTNAME', (0, -3), (-1, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(table)
+
+        # Pie de página
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("Gracias por su compra. Contáctenos para cualquier consulta.", styles['Normal']))
+
+        # Generar el PDF
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+        
+        return pdf
 
     def get_queryset(self):
         """
@@ -102,83 +197,75 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def send_pdf(self, request, pk=None):
+        """Enviar factura por correo electrónico"""
         factura = self.get_object()
-        if not factura.cliente:
-            return Response({"error": "No se ha asignado un cliente a esta factura"}, status=400)
-        cliente = factura.cliente
+        
+        try:
+            # Generar PDF usando la función auxiliar
+            pdf = self._generar_pdf_factura(factura)
+            
+            # Enviar correo
+            email = EmailMessage(
+                subject=f"Factura #{factura.numero_factura or factura.id}",
+                body="Adjunto encontrarás tu factura.",
+                from_email=settings.EMAIL_HOST_USER,
+                to=[factura.cliente.email],
+            )
+            email.attach(f"factura_{factura.id}.pdf", pdf, "application/pdf")
+            email.send()
 
-        # Generar PDF
-        buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        styles = getSampleStyleSheet()
-        elements = []
+            return Response({"status": "Factura enviada al correo"})
+            
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            return Response({"error": "Error al enviar el correo"}, status=500)
 
-        # Encabezado
-        elements.append(Paragraph("Sistema de Facturación Segura", styles['Title']))
-        elements.append(Paragraph("RUC: 123456789 | Dirección: Av. Ejemplo 123, Ciudad", styles['Normal']))
-        elements.append(Paragraph("Teléfono: (123) 456-7890 | Email: contacto@facturasegura.com", styles['Normal']))
-        elements.append(Spacer(1, 12))
+    @action(detail=True, methods=['get'])
+    def view_pdf(self, request, pk=None):
+        """Visualizar PDF de la factura en el navegador"""
+        factura = self.get_object()
+        
+        try:
+            # Generar PDF usando la función auxiliar
+            pdf = self._generar_pdf_factura(factura)
+            
+            # Crear respuesta HTTP con el PDF
+            response = HttpResponse(pdf, content_type='application/pdf')
+            
+            # Configurar headers para visualización en navegador
+            filename = f"factura_{factura.numero_factura or factura.id}.pdf"
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            
+            return response
+            
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            return Response({"error": "Error al generar el PDF"}, status=500)
 
-        # Información de la factura
-        elements.append(Paragraph(f"Factura #{factura.id}", styles['Heading2']))
-        elements.append(Paragraph(f"Fecha: {factura.fecha.strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
-        elements.append(Paragraph(f"Cliente: {cliente.nombre}", styles['Normal']))
-        elements.append(Paragraph(f"Email: {cliente.email}", styles['Normal']))
-        elements.append(Spacer(1, 12))
-
-        # Tabla de ítems
-        data = [['Descripción', 'Cantidad', 'Precio Unitario', 'Subtotal']]
-        total = 0
-        for item in factura.items.all():
-            precio_unitario = item.producto.precio  # Asume que Producto tiene un campo precio
-            subtotal = item.cantidad * precio_unitario
-            total += subtotal
-            data.append([
-                item.producto.nombre,
-                str(item.cantidad),
-                f"${precio_unitario:.2f}",
-                f"${subtotal:.2f}"
-            ])
-        data.append(['', '', 'Total', f"${total:.2f}"])
-
-        table = Table(data)
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
-            ('TEXTCOLOR', (0, 1), (-1, -2), colors.black),
-            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -2), 10),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
-        elements.append(table)
-
-        # Pie de página
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph("Gracias por su compra. Contáctenos para cualquier consulta.", styles['Normal']))
-
-        # Generar el PDF
-        doc.build(elements)
-        pdf = buffer.getvalue()
-        buffer.close()
-
-        # Enviar correo
-        email = EmailMessage(
-            subject=f"Factura #{factura.id}",
-            body="Adjunto encontrarás tu factura.",
-            from_email=settings.EMAIL_HOST_USER,
-            to=[cliente.email],
-        )
-        email.attach(f"factura_{factura.id}.pdf", pdf, "application/pdf")
-        email.send()
-
-        return Response({"status": "Factura enviada al correo"})
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        """Descargar PDF de la factura"""
+        factura = self.get_object()
+        
+        try:
+            # Generar PDF usando la función auxiliar
+            pdf = self._generar_pdf_factura(factura)
+            
+            # Crear respuesta HTTP con el PDF
+            response = HttpResponse(pdf, content_type='application/pdf')
+            
+            # Configurar headers para descarga
+            filename = f"factura_{factura.numero_factura or factura.id}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            return Response({"error": "Error al generar el PDF"}, status=500)
 
     @action(detail=False, methods=['get'])
     def metrics(self, request):
