@@ -4,6 +4,12 @@ from apps.usuarios.permissions import ProductoPermission
 from rest_framework.exceptions import PermissionDenied
 from .models import Producto
 from .serializers import ProductoSerializer
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from apps.auditorias.models import LogAuditoria
+
 
 class ProductoViewSet(viewsets.ModelViewSet):
     """
@@ -34,3 +40,32 @@ class ProductoViewSet(viewsets.ModelViewSet):
         if not (user.is_superuser or user.role in ['Administrador', 'Bodega', 'Ventas']):
             raise PermissionDenied("No tienes permiso para acceder a los productos")
         return super().list(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
+    def eliminar_con_motivo(self, request, pk=None):
+        """
+        Eliminar un producto con motivo, registrando auditoría.
+        Solo permitido para Administrador o Bodega.
+        """
+        producto = get_object_or_404(Producto, pk=pk)
+        motivo = request.data.get('motivo')
+
+        if not motivo:
+            return Response({'error': 'El motivo es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar permisos
+        user = request.user
+        if not (user.is_superuser or user.role in ['Administrador', 'Bodega']):
+            return Response({'error': 'No tienes permiso para eliminar este producto.'}, status=403)
+
+        # Registrar en auditoría
+        LogAuditoria.objects.create(
+            modelo_afectado='Producto',
+            objeto_id=producto.id,
+            descripcion_objeto=str(producto),
+            motivo=motivo,
+            usuario=user
+        )
+
+        producto.delete()
+        return Response({'mensaje': 'Producto eliminado y registrado en auditoría.'}, status=status.HTTP_204_NO_CONTENT)

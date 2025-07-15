@@ -1,7 +1,7 @@
 from django.core.mail import EmailMessage
 from django.conf import settings
 from django.http import HttpResponse
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import action
@@ -17,6 +17,7 @@ from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 from apps.usuarios.permissions import FacturaPermission
+from apps.auditorias.models import LogAuditoria
 
 class FacturaViewSet(viewsets.ModelViewSet):
     """
@@ -379,3 +380,34 @@ class FacturaViewSet(viewsets.ModelViewSet):
             return Response({
                 "error": "No se pudo anular la factura"
             }, status=500)
+
+    @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
+    def eliminar_con_motivo(self, request, pk=None):
+        """
+        Eliminar una factura con motivo, registrando en LogAuditoria.
+        Solo el creador o Administrador pueden eliminar facturas en estado BORRADOR.
+        """
+        factura = self.get_object()
+        motivo = request.data.get('motivo')
+
+        if not motivo:
+            return Response({'error': 'El motivo es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validaciones ya existentes:
+        if not factura.puede_eliminar(request.user):
+            return Response({'error': 'Solo el creador o un Administrador pueden eliminar la factura.'}, status=403)
+
+        if not factura.puede_editar():
+            return Response({'error': 'No se puede eliminar una factura ya emitida. Usa "anular" en su lugar.'}, status=403)
+
+        # Registrar en auditoría antes de eliminar
+        LogAuditoria.objects.create(
+            modelo_afectado='Factura',
+            objeto_id=factura.id,
+            descripcion_objeto=str(factura),
+            motivo=motivo,
+            usuario=request.user
+        )
+
+        factura.delete()
+        return Response({'mensaje': 'Factura eliminada y registrada en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
