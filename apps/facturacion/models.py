@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.conf import settings
 from apps.productos.models import Producto
 from apps.clientes.models import Cliente
+from decimal import Decimal
 
 class Factura(models.Model):
     ESTADOS = [
@@ -11,15 +12,48 @@ class Factura(models.Model):
         ('ANULADA', 'Anulada'),
     ]
     
+    # Constante para el IVA del 15%
+    IVA_PORCENTAJE = Decimal('0.15')
+    
     creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR')
     anulada = models.BooleanField(default=False)  # Mantener por compatibilidad
     numero_factura = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    
+    # Campos para el cálculo del IVA
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"Factura #{self.id} - {'Anulada' if self.anulada else 'Activa'}"
+
+    def calcular_totales(self):
+        """
+        Calcula el subtotal, IVA y total de la factura basado en los items.
+        """
+        self.subtotal = sum(
+            item.cantidad * item.producto.precio 
+            for item in self.items.all()
+        )
+        self.iva = self.subtotal * self.IVA_PORCENTAJE
+        self.total = self.subtotal + self.iva
+        return {
+            'subtotal': self.subtotal,
+            'iva': self.iva,
+            'total': self.total
+        }
+
+    def save(self, *args, **kwargs):
+        """
+        Sobrescribir el método save para recalcular totales automáticamente.
+        """
+        # Si la factura ya existe, recalcular totales
+        if self.pk:
+            self.calcular_totales()
+        super().save(*args, **kwargs)
 
     def puede_editar(self):
         """Una factura solo puede editarse si está en estado BORRADOR"""
@@ -171,6 +205,10 @@ class FacturaItem(models.Model):
                 if producto.stock < 0:
                     raise ValueError(f"Error: Stock negativo para {producto.nombre}")
                 producto.save()
+            
+            # Recalcular totales de la factura después de guardar el item
+            self.factura.calcular_totales()
+            self.factura.save()
 
     def delete(self, *args, **kwargs):
         """
@@ -183,4 +221,10 @@ class FacturaItem(models.Model):
                 producto = self.producto
                 producto.stock += self.cantidad
                 producto.save()
+            
+            factura = self.factura
             super().delete(*args, **kwargs)
+            
+            # Recalcular totales de la factura después de eliminar el item
+            factura.calcular_totales()
+            factura.save()

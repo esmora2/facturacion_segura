@@ -22,11 +22,18 @@ class FacturaItemSerializer(serializers.ModelSerializer):
 class FacturaSerializer(serializers.ModelSerializer):
     items = FacturaItemSerializer(many=True, required=True)
     cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
+    
+    # Campos calculados de solo lectura
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    iva = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Factura
-        fields = ['id', 'creador', 'cliente', 'fecha', 'estado', 'numero_factura', 'anulada', 'items']
-        read_only_fields = ['id', 'creador', 'fecha', 'numero_factura', 'anulada']
+        fields = ['id', 'creador', 'cliente', 'fecha', 'estado', 'numero_factura', 
+                 'anulada', 'subtotal', 'iva', 'total', 'items']
+        read_only_fields = ['id', 'creador', 'fecha', 'numero_factura', 'anulada', 
+                           'subtotal', 'iva', 'total']
 
     def validate(self, attrs):
         if not attrs.get('items'):
@@ -63,6 +70,10 @@ class FacturaSerializer(serializers.ModelSerializer):
             # Crear los items (el stock se reduce automáticamente en el modelo)
             for item_data in items_data:
                 FacturaItem.objects.create(factura=factura, **item_data)
+            
+            # Recalcular totales después de crear todos los items
+            factura.calcular_totales()
+            factura.save()
             
             return factura
 
