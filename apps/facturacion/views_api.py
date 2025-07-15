@@ -411,3 +411,33 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         factura.delete()
         return Response({'mensaje': 'Factura eliminada y registrada en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribir destroy para crear log de auditoría automáticamente
+        """
+        factura = self.get_object()
+        
+        # Validaciones existentes
+        if not factura.puede_eliminar(request.user):
+            raise PermissionDenied("Solo el creador de la factura o un Administrador pueden eliminarla")
+        
+        if not factura.puede_editar():
+            raise PermissionDenied("No se puede eliminar una factura que ya ha sido emitida. Use la función 'anular' en su lugar.")
+        
+        # Obtener motivo del request.data
+        motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
+        
+        # Crear log de auditoría ANTES de eliminar
+        LogAuditoria.objects.create(
+            modelo_afectado='Factura',
+            objeto_id=factura.id,
+            descripcion_objeto=f"Factura #{factura.numero_factura or factura.id} - Cliente: {factura.cliente.nombre if factura.cliente else 'Sin cliente'}",
+            motivo=motivo,
+            usuario=request.user
+        )
+        
+        # Eliminar la factura (esto restaurará automáticamente el stock)
+        factura.delete()
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)

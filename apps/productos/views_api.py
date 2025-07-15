@@ -69,3 +69,26 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
         producto.delete()
         return Response({'mensaje': 'Producto eliminado y registrado en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribir destroy para crear log de auditoría automáticamente
+        """
+        producto = self.get_object()
+        
+        # Obtener motivo del request.data
+        motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
+        
+        # Crear log de auditoría ANTES de eliminar
+        LogAuditoria.objects.create(
+            modelo_afectado='Producto',
+            objeto_id=producto.id,
+            descripcion_objeto=f"{producto.nombre} - ${producto.precio}",
+            motivo=motivo,
+            usuario=request.user
+        )
+        
+        # Eliminar el producto
+        producto.delete()
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)

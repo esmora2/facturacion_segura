@@ -65,3 +65,26 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
         cliente.delete()
         return Response({'mensaje': 'Cliente eliminado con motivo registrado.'}, status=status.HTTP_204_NO_CONTENT)
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribir destroy para crear log de auditoría automáticamente
+        """
+        cliente = self.get_object()
+        
+        # Obtener motivo del request.data
+        motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
+        
+        # Crear log de auditoría ANTES de eliminar
+        LogAuditoria.objects.create(
+            modelo_afectado='Cliente',
+            objeto_id=cliente.id,
+            descripcion_objeto=f"{cliente.nombre} ({cliente.email})",
+            motivo=motivo,
+            usuario=request.user
+        )
+        
+        # Eliminar el cliente
+        cliente.delete()
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
