@@ -9,6 +9,7 @@ from .serializers import UserSerializer
 from .permissions import AdminOnlyPermission
 from apps.auditorias.models import LogAuditoria
 import logging
+from rest_framework.authtoken.models import Token
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -166,3 +167,39 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user_to_delete.delete()
         return Response({'mensaje': 'Usuario eliminado y registrado en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['post'], url_path='generar-token-permiso')
+    def generar_token_permiso(self, request, pk=None):
+        """
+        Permite al administrador asignar o cambiar rol y generar token de acceso para un usuario.
+        """
+        if not request.user.is_superuser and request.user.role != User.ADMINISTRADOR:
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        usuario_objetivo = self.get_object()
+        nuevo_rol = request.data.get('role')
+        if nuevo_rol is None or nuevo_rol == '':
+            usuario_objetivo.role = None
+            usuario_objetivo.save()
+            token, _ = Token.objects.get_or_create(user=usuario_objetivo)
+            return Response({
+                'mensaje': 'Rol eliminado y token generado.',
+                'usuario_id': usuario_objetivo.id,
+                'username': usuario_objetivo.username,
+                'token_acceso': token.key
+            }, status=status.HTTP_200_OK)
+        if nuevo_rol not in [choice[0] for choice in User.ROLE_CHOICES]:
+            return Response({'error': 'Rol no válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario_objetivo.role = nuevo_rol
+        usuario_objetivo.save()
+
+        # Genera o recupera el token
+        token, created = Token.objects.get_or_create(user=usuario_objetivo)
+
+        return Response({
+            'mensaje': f'Permiso {nuevo_rol} asignado y token generado.',
+            'usuario_id': usuario_objetivo.id,
+            'username': usuario_objetivo.username,
+            'token_acceso': token.key
+        }, status=status.HTTP_200_OK)

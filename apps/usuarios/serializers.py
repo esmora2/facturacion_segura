@@ -108,3 +108,6 @@ class PasswordValidationSerializer(serializers.Serializer):
             raise serializers.ValidationError("Contraseña incorrecta")
         
         return attrs
+    
+class GenerateUserTokenSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
