@@ -298,36 +298,79 @@ class FacturaViewSet(viewsets.ModelViewSet):
         Emitir una factura (cambiar de BORRADOR a EMITIDA).
         Solo el creador o un Administrador pueden emitir.
         """
-        factura = self.get_object()
-        
-        # Verificar que la factura esté en estado BORRADOR
-        if factura.estado != 'BORRADOR':
+        try:
+            factura = self.get_object()
+            
+            # Verificar que la factura esté en estado BORRADOR
+            if factura.estado != 'BORRADOR':
+                return Response({
+                    "error": f"Solo se pueden emitir facturas en estado borrador. Estado actual: {factura.get_estado_display()}"
+                }, status=400)
+            
+            # Verificar permisos de usuario (solo creador o admin pueden emitir)
+            if not factura.puede_editar_usuario(request.user):
+                return Response({
+                    "error": "Solo el creador de la factura o un Administrador pueden emitirla"
+                }, status=403)
+            
+            # Verificar que la factura tenga al menos un item
+            if not factura.items.exists():
+                return Response({
+                    "error": "No se puede emitir una factura sin items"
+                }, status=400)
+            
+            # Verificar que todos los items tengan stock suficiente
+            for item in factura.items.all():
+                if item.producto.stock < item.cantidad:
+                    return Response({
+                        "error": f"Stock insuficiente para el producto {item.producto.nombre}. Stock disponible: {item.producto.stock}, Cantidad requerida: {item.cantidad}"
+                    }, status=400)
+            
+            # Generar número de factura si no existe
+            if not factura.numero_factura:
+                # Obtener el último número de factura
+                from django.db.models import Max
+                last_factura = Factura.objects.filter(
+                    numero_factura__isnull=False
+                ).aggregate(Max('numero_factura'))
+                
+                if last_factura['numero_factura__max']:
+                    # Extraer el número y sumar 1
+                    try:
+                        last_number = int(last_factura['numero_factura__max'].split('-')[-1])
+                        new_number = last_number + 1
+                    except (ValueError, IndexError):
+                        new_number = 1
+                else:
+                    new_number = 1
+                
+                factura.numero_factura = f"FAC-{new_number:06d}"
+            
+            # Cambiar estado a EMITIDA
+            factura.estado = 'EMITIDA'
+            
+            # Actualizar fecha de emisión
+            from django.utils import timezone
+            factura.fecha = timezone.now()
+            factura.save()
+            
             return Response({
-                "error": f"Solo se pueden emitir facturas en estado borrador. Estado actual: {factura.get_estado_display()}"
-            }, status=400)
-        
-        # Verificar permisos de usuario (solo creador o admin pueden emitir)
-        if not factura.puede_editar_usuario(request.user):
+                "status": "Factura emitida correctamente",
+                "factura_id": factura.id,
+                "numero_factura": factura.numero_factura,
+                "estado": factura.estado,
+                "fecha_emision": factura.fecha.isoformat()
+            })
+            
+        except Exception as e:
+            # Log del error completo para debugging
+            import traceback
+            print(f"Error al emitir factura {pk}: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            
             return Response({
-                "error": "Solo el creador de la factura o un Administrador pueden emitirla"
-            }, status=403)
-        
-        # Verificar que la factura tenga al menos un item
-        if not factura.items.exists():
-            return Response({
-                "error": "No se puede emitir una factura sin items"
-            }, status=400)
-        
-        # Emitir la factura
-        factura.emitir()
-        
-        return Response({
-            "status": "Factura emitida correctamente",
-            "factura_id": factura.id,
-            "numero_factura": factura.numero_factura,
-            "estado": factura.estado,
-            "fecha_emision": factura.fecha.isoformat()
-        })
+                "error": f"Error interno del servidor: {str(e)}"
+            }, status=500)
 
     @action(detail=True, methods=['post'])
     def marcar_pagada(self, request, pk=None):
