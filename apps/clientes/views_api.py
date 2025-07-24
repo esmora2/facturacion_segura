@@ -1,12 +1,15 @@
 from rest_framework import viewsets, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
+from apps.usuarios.permissions import AdminOnlyPermission
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from apps.usuarios.permissions import ClientePermission
-from .models import Cliente
+from .models import Cliente, ClienteToken
 from .serializers import ClienteSerializer
 
 # 🔽 Importar modelo de auditorías
@@ -88,3 +91,16 @@ class ClienteViewSet(viewsets.ModelViewSet):
         cliente.delete()
         
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, AdminOnlyPermission])
+def generar_token_cliente(request, cliente_id):
+    try:
+        cliente = Cliente.objects.get(pk=cliente_id)
+        token, _ = ClienteToken.objects.get_or_create(cliente=cliente)
+        return Response({'token': token.key, 'cliente_id': cliente.id})
+    except Cliente.DoesNotExist:
+        return Response({'error': 'Cliente no encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
