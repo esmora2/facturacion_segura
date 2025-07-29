@@ -30,7 +30,7 @@ router.register(r'api/logs', LogAuditoriaViewSet)
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
-
+    path('silk/', include('silk.urls', namespace='silk')),
     # Auth
     path('accounts/', include('django.contrib.auth.urls')),
 

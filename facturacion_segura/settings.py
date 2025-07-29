@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'apps.productos',
     'apps.facturacion',
     'apps.auditorias',
+    'silk',
 ]
 
 MIDDLEWARE = [
@@ -39,6 +40,7 @@ MIDDLEWARE = [
     # Middlewares personalizados para control de usuarios y roles
     'apps.usuarios.middleware.CheckUserIsActiveMiddleware',
     'apps.usuarios.middleware.RoleBasedAccessMiddleware',
+    'silk.middleware.SilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'facturacion_segura.urls'
