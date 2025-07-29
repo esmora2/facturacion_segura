@@ -14,17 +14,17 @@ class Factura(models.Model):
         ('PAGADA', 'Pagada'),
         ('ANULADA', 'Anulada'),
     ]
-    
+
     # Constante para el IVA del 15%
     IVA_PORCENTAJE = Decimal('0.15')
-    
+
     creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR')
     anulada = models.BooleanField(default=False)  # Mantener por compatibilidad
     numero_factura = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    
+
     # Campos para el cálculo del IVA
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -39,7 +39,7 @@ class Factura(models.Model):
         Calcula el subtotal, IVA y total de la factura basado en los items.
         """
         self.subtotal = sum(
-            item.cantidad * item.producto.precio 
+            item.cantidad * item.producto.precio
             for item in self.items.all()
         )
         self.iva = self.subtotal * self.IVA_PORCENTAJE
@@ -62,7 +62,7 @@ class Factura(models.Model):
     def puede_editar(self):
         """Una factura solo puede editarse si está en estado BORRADOR"""
         return self.estado == 'BORRADOR'
-    
+
     def puede_editar_usuario(self, user):
         """
         Determina si un usuario puede editar esta factura.
@@ -74,7 +74,7 @@ class Factura(models.Model):
         """
         if not self.puede_editar():
             return False
-        
+
         if user.is_superuser:
             return True
         if user.role == 'Administrador':
@@ -82,11 +82,11 @@ class Factura(models.Model):
         if self.creador == user:
             return True
         return False
-    
+
     def puede_anular(self):
         """Una factura puede anularse si está EMITIDA o PAGADA"""
         return self.estado in ['EMITIDA', 'PAGADA']
-    
+
     def puede_anular_usuario(self, user):
         """
         Determina si un usuario puede anular esta factura.
@@ -98,7 +98,7 @@ class Factura(models.Model):
         """
         if not self.puede_anular():
             return False
-        
+
         if user.is_superuser:
             return True
         if user.role == 'Administrador':
@@ -106,7 +106,7 @@ class Factura(models.Model):
         if self.creador == user:
             return True
         return False
-    
+
     def emitir(self):
         """Cambiar estado a EMITIDA y generar número de factura"""
         if self.estado == 'BORRADOR':
@@ -117,7 +117,7 @@ class Factura(models.Model):
             self.numero_factura = f"FAC-{(ultimo_numero + 1):06d}"
             self.estado = 'EMITIDA'
             self.save()
-            
+
     def marcar_pagada(self):
         """Marcar factura como pagada"""
         if self.estado == 'EMITIDA':
@@ -136,12 +136,12 @@ class Factura(models.Model):
                     producto = item.producto
                     producto.stock += item.cantidad
                     producto.save()
-                
+
                 # Cambiar estado de la factura
                 self.estado = 'ANULADA'
                 self.anulada = True  # Por compatibilidad
                 self.save()
-                
+
                 return True
         return False
 
@@ -160,7 +160,7 @@ class Factura(models.Model):
         if self.creador == user:
             return True
         return False
-    
+
     def delete(self, *args, **kwargs):
         """
         Al eliminar una factura, restituir automáticamente el stock de todos los items.
@@ -173,7 +173,7 @@ class Factura(models.Model):
                     producto = item.producto
                     producto.stock += item.cantidad
                     producto.save()
-            
+
             # Eliminar la factura (esto eliminará los items automáticamente por CASCADE)
             super().delete(*args, **kwargs)
 
@@ -192,17 +192,17 @@ class FacturaItem(models.Model):
         Usa transacciones para garantizar consistencia.
         """
         creating = self.pk is None
-        
+
         if creating:
             # Verificar stock disponible antes de crear
             if self.cantidad > self.producto.stock:
                 raise ValueError(f"Stock insuficiente para {self.producto.nombre}. "
                                f"Stock disponible: {self.producto.stock}, "
                                f"Cantidad solicitada: {self.cantidad}")
-        
+
         with transaction.atomic():
             super().save(*args, **kwargs)
-            
+
             # Solo disminuir stock al crear y si la factura no está anulada
             if creating and not self.factura.anulada and self.factura.estado != 'ANULADA':
                 producto = self.producto
@@ -210,7 +210,7 @@ class FacturaItem(models.Model):
                 if producto.stock < 0:
                     raise ValueError(f"Error: Stock negativo para {producto.nombre}")
                 producto.save()
-            
+
             # Recalcular totales de la factura después de guardar el item
             self.factura.calcular_totales()
             self.factura.save()
@@ -226,10 +226,10 @@ class FacturaItem(models.Model):
                 producto = self.producto
                 producto.stock += self.cantidad
                 producto.save()
-            
+
             factura = self.factura
             super().delete(*args, **kwargs)
-            
+
             # Recalcular totales de la factura después de eliminar el item
             factura.calcular_totales()
             factura.save()

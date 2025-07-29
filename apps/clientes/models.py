@@ -20,7 +20,7 @@ class Role(models.Model):
 
     def __str__(self):
         """Representación legible del rol."""
-        return self.name
+        return str(self.name)
 
 class Cliente(models.Model):
     """Modelo para clientes."""
@@ -35,7 +35,7 @@ class Cliente(models.Model):
         roles_list = [role.name for role in self.roles.all()]
         if roles_list:
             return f"{self.nombre} ({', '.join(roles_list)})"
-        return self.nombre
+        return str(self.nombre)
 
     @property
     def is_authenticated(self):

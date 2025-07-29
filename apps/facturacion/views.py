@@ -29,4 +29,3 @@ def eliminar_factura(request, factura_id):
         factura.delete()
         return redirect('lista_facturas')
     return HttpResponseForbidden("Acción no permitida.")
-

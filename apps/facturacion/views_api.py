@@ -35,9 +35,9 @@ class FacturaViewSet(viewsets.ModelViewSet):
         """
         if not factura.cliente:
             raise ValueError("No se ha asignado un cliente a esta factura")
-        
+
         cliente = factura.cliente
-        
+
         # Generar PDF
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -64,7 +64,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
         # Tabla de ítems
         data = [['Descripción', 'Cantidad', 'Precio Unitario', 'Subtotal']]
         subtotal = 0
-        
+
         if factura.items.exists():
             for item in factura.items.all():
                 precio_unitario = item.producto.precio
@@ -78,11 +78,11 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 ])
         else:
             data.append(['Sin items', '', '', '$0.00'])
-        
+
         # Calcular IVA y total
         iva = subtotal * factura.IVA_PORCENTAJE
         total = subtotal + iva
-        
+
         # Filas de totales
         data.append(['', '', 'Subtotal', f"${subtotal:.2f}"])
         data.append(['', '', 'IVA (15%)', f"${iva:.2f}"])
@@ -119,7 +119,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
         doc.build(elements)
         pdf = buffer.getvalue()
         buffer.close()
-        
+
         return pdf
 
     def get_queryset(self):
@@ -185,14 +185,14 @@ class FacturaViewSet(viewsets.ModelViewSet):
             raise PermissionDenied(
                 "Solo el creador de la factura o un Administrador pueden eliminarla"
             )
-        
+
         # Solo se pueden eliminar facturas en borrador
         if not instance.puede_editar():
             raise PermissionDenied(
                 "No se puede eliminar una factura que ya ha sido emitida. "
                 "Use la función 'anular' en su lugar."
             )
-        
+
         # La eliminación restaurará automáticamente el stock a través del método delete() de FacturaItem
         instance.delete()
 
@@ -200,11 +200,11 @@ class FacturaViewSet(viewsets.ModelViewSet):
     def send_pdf(self, request, pk=None):
         """Enviar factura por correo electrónico"""
         factura = self.get_object()
-        
+
         try:
             # Generar PDF usando la función auxiliar
             pdf = self._generar_pdf_factura(factura)
-            
+
             # Enviar correo
             email = EmailMessage(
                 subject=f"Factura #{factura.numero_factura or factura.id}",
@@ -216,7 +216,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
             email.send()
 
             return Response({"status": "Factura enviada al correo"})
-            
+
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
@@ -226,20 +226,20 @@ class FacturaViewSet(viewsets.ModelViewSet):
     def view_pdf(self, request, pk=None):
         """Visualizar PDF de la factura en el navegador"""
         factura = self.get_object()
-        
+
         try:
             # Generar PDF usando la función auxiliar
             pdf = self._generar_pdf_factura(factura)
-            
+
             # Crear respuesta HTTP con el PDF
             response = HttpResponse(pdf, content_type='application/pdf')
-            
+
             # Configurar headers para visualización en navegador
             filename = f"factura_{factura.numero_factura or factura.id}.pdf"
             response['Content-Disposition'] = f'inline; filename="{filename}"'
-            
+
             return response
-            
+
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
@@ -249,20 +249,20 @@ class FacturaViewSet(viewsets.ModelViewSet):
     def download_pdf(self, request, pk=None):
         """Descargar PDF de la factura"""
         factura = self.get_object()
-        
+
         try:
             # Generar PDF usando la función auxiliar
             pdf = self._generar_pdf_factura(factura)
-            
+
             # Crear respuesta HTTP con el PDF
             response = HttpResponse(pdf, content_type='application/pdf')
-            
+
             # Configurar headers para descarga
             filename = f"factura_{factura.numero_factura or factura.id}.pdf"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            
+
             return response
-            
+
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
@@ -300,32 +300,32 @@ class FacturaViewSet(viewsets.ModelViewSet):
         """
         try:
             factura = self.get_object()
-            
+
             # Verificar que la factura esté en estado BORRADOR
             if factura.estado != 'BORRADOR':
                 return Response({
                     "error": f"Solo se pueden emitir facturas en estado borrador. Estado actual: {factura.get_estado_display()}"
                 }, status=400)
-            
+
             # Verificar permisos de usuario (solo creador o admin pueden emitir)
             if not factura.puede_editar_usuario(request.user):
                 return Response({
                     "error": "Solo el creador de la factura o un Administrador pueden emitirla"
                 }, status=403)
-            
+
             # Verificar que la factura tenga al menos un item
             if not factura.items.exists():
                 return Response({
                     "error": "No se puede emitir una factura sin items"
                 }, status=400)
-            
+
             # Verificar que todos los items tengan stock suficiente
             for item in factura.items.all():
                 if item.producto.stock < item.cantidad:
                     return Response({
                         "error": f"Stock insuficiente para el producto {item.producto.nombre}. Stock disponible: {item.producto.stock}, Cantidad requerida: {item.cantidad}"
                     }, status=400)
-            
+
             # Generar número de factura si no existe
             if not factura.numero_factura:
                 # Obtener el último número de factura
@@ -333,7 +333,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 last_factura = Factura.objects.filter(
                     numero_factura__isnull=False
                 ).aggregate(Max('numero_factura'))
-                
+
                 if last_factura['numero_factura__max']:
                     # Extraer el número y sumar 1
                     try:
@@ -343,17 +343,17 @@ class FacturaViewSet(viewsets.ModelViewSet):
                         new_number = 1
                 else:
                     new_number = 1
-                
+
                 factura.numero_factura = f"FAC-{new_number:06d}"
-            
+
             # Cambiar estado a EMITIDA
             factura.estado = 'EMITIDA'
-            
+
             # Actualizar fecha de emisión
             from django.utils import timezone
             factura.fecha = timezone.now()
             factura.save()
-            
+
             return Response({
                 "status": "Factura emitida correctamente",
                 "factura_id": factura.id,
@@ -361,13 +361,13 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 "estado": factura.estado,
                 "fecha_emision": factura.fecha.isoformat()
             })
-            
+
         except Exception as e:
             # Log del error completo para debugging
             import traceback
             print(f"Error al emitir factura {pk}: {str(e)}")
             print(f"Traceback: {traceback.format_exc()}")
-            
+
             return Response({
                 "error": f"Error interno del servidor: {str(e)}"
             }, status=500)
@@ -389,7 +389,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
         Solo el creador o un Administrador pueden anularla.
         """
         factura = self.get_object()
-        
+
         # Verificar permisos de usuario
         if not factura.puede_anular_usuario(request.user):
             if not factura.puede_anular():
@@ -400,7 +400,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 return Response({
                     "error": "Solo el creador de la factura o un Administrador pueden anularla"
                 }, status=403)
-        
+
         # Obtener información de los productos antes de anular (para el response)
         items_info = []
         for item in factura.items.all():
@@ -410,7 +410,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
                 "stock_anterior": item.producto.stock,
                 "stock_nuevo": item.producto.stock + item.cantidad
             })
-        
+
         # Anular la factura (esto automáticamente restituye el stock)
         if factura.anular():
             return Response({
@@ -454,23 +454,23 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         factura.delete()
         return Response({'mensaje': 'Factura eliminada y registrada en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         Sobrescribir destroy para crear log de auditoría automáticamente
         """
         factura = self.get_object()
-        
+
         # Validaciones existentes
         if not factura.puede_eliminar(request.user):
             raise PermissionDenied("Solo el creador de la factura o un Administrador pueden eliminarla")
-        
+
         if not factura.puede_editar():
             raise PermissionDenied("No se puede eliminar una factura que ya ha sido emitida. Use la función 'anular' en su lugar.")
-        
+
         # Obtener motivo del request.data
         motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
-        
+
         # Crear log de auditoría ANTES de eliminar
         LogAuditoria.objects.create(
             modelo_afectado='Factura',
@@ -479,8 +479,8 @@ class FacturaViewSet(viewsets.ModelViewSet):
             motivo=motivo,
             usuario=request.user
         )
-        
+
         # Eliminar la factura (esto restaurará automáticamente el stock)
         factura.delete()
-        
+
         return Response(status=status.HTTP_204_NO_CONTENT)

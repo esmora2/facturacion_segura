@@ -1,14 +1,22 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from apps.usuarios.permissions import ProductoPermission
+"""API views para la gestión de productos."""
+
+# Django imports
+from django.shortcuts import get_object_or_404
+
+# Rest Framework imports
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+# Apps imports
+from apps.auditorias.models import LogAuditoria
+from apps.usuarios.permissions import ProductoPermission
+
+# Local imports
 from .models import Producto
 from .serializers import ProductoSerializer
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from apps.auditorias.models import LogAuditoria
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
@@ -69,16 +77,16 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
         producto.delete()
         return Response({'mensaje': 'Producto eliminado y registrado en auditoría.'}, status=status.HTTP_204_NO_CONTENT)
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         Sobrescribir destroy para crear log de auditoría automáticamente
         """
         producto = self.get_object()
-        
+
         # Obtener motivo del request.data
         motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
-        
+
         # Crear log de auditoría ANTES de eliminar
         LogAuditoria.objects.create(
             modelo_afectado='Producto',
@@ -87,8 +95,8 @@ class ProductoViewSet(viewsets.ModelViewSet):
             motivo=motivo,
             usuario=request.user
         )
-        
+
         # Eliminar el producto
         producto.delete()
-        
+
         return Response(status=status.HTTP_204_NO_CONTENT)

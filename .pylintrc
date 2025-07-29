@@ -1,0 +1,53 @@
+[MASTER]
+# Django plugmakesin for better Django support
+# load-plugins = pylint_django
+
+[MESSAGES CONTROL]
+# Disable specific warnings that are common in Django projects
+disable = 
+    no-member,  # E1101 - Django models have dynamic members
+    missing-module-docstring,  # C0114 - Not required for all modules
+    missing-class-docstring,   # C0115 - Not required for all classes
+    missing-function-docstring, # C0116 - Not required for all functions
+    too-few-public-methods,    # R0903 - Common in Django serializers
+    too-many-ancestors,        # R0901 - Common in Django viewsets
+    import-error,              # E0401 - Pylint sometimes can't resolve Django imports
+    invalid-name,              # C0103 - Django migration files don't follow snake_case
+    unused-argument,           # W0613 - Common in Django views
+    broad-exception-caught,    # W0718 - Sometimes necessary for API error handling
+    pointless-string-statement, # W0105 - Module docstrings might appear as this
+    reimported,                # W0404 - Sometimes necessary for dynamic imports
+    wrong-import-position,     # C0413 - Django sometimes requires dynamic imports
+    import-outside-toplevel,   # C0415 - Sometimes necessary for Django
+    unused-variable,           # W0612 - Sometimes vars are used in templates or debugging
+    no-else-return,            # R1705 - Elif patterns are sometimes clearer
+    no-else-raise,             # R1720 - Sometimes else  code clearer
+    abstract-method,           # W0223 - Django serializers don't always need all methods
+    unused-import,             # W0611 - Sometimes imports used in submodules
+    line-too-long,             # C0301 - Sometimes necessary for readability in migrations
+    wrong-import-order,        # C0411 - Django auto-generated files
+    ungrouped-imports,         # C0412 - Sometimes necessary for Django
+    arguments-renamed,         # W0237 - Django framework compatibility
+    redefined-outer-name,      # W0621 - Sometimes necessary for scoping
+    too-many-locals,           # R0914 - Complex business logic might need many vars
+    duplicate-code,            # R0801 - Django migrations often have similar patterns
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length = 140
+
+[VARIABLES]
+# List of additional names supposed to be defined in builtins
+additional-builtins = 
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args = 10
+# Maximum number of locals for function / method body
+max-locals = 25
+# Maximum number of return / yield for function / method body
+max-returns = 6
+# Maximum number of branch for function / method body
+max-branches = 15
+# Maximum number of statements in function / method body
+max-statements = 60

@@ -1,19 +1,22 @@
-from rest_framework import viewsets, status
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from apps.usuarios.permissions import AdminOnlyPermission
-from rest_framework.decorators import action
-from rest_framework.response import Response
+"""API views para la gestión de clientes."""
+
+# Django imports
 from django.shortcuts import get_object_or_404
 
-from apps.usuarios.permissions import ClientePermission
+# Rest Framework imports
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+# Apps imports
+from apps.auditorias.models import LogAuditoria
+from apps.usuarios.permissions import AdminOnlyPermission, ClientePermission
+
+# Local imports
 from .models import Cliente, ClienteToken
 from .serializers import ClienteSerializer
-
-# 🔽 Importar modelo de auditorías
-from apps.auditorias.models import LogAuditoria
 
 
 class ClienteViewSet(viewsets.ModelViewSet):
@@ -68,16 +71,16 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
         cliente.delete()
         return Response({'mensaje': 'Cliente eliminado con motivo registrado.'}, status=status.HTTP_204_NO_CONTENT)
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         Sobrescribir destroy para crear log de auditoría automáticamente
         """
         cliente = self.get_object()
-        
+
         # Obtener motivo del request.data
         motivo = request.data.get('motivo', 'Eliminación sin motivo especificado')
-        
+
         # Crear log de auditoría ANTES de eliminar
         LogAuditoria.objects.create(
             modelo_afectado='Cliente',
@@ -86,21 +89,22 @@ class ClienteViewSet(viewsets.ModelViewSet):
             motivo=motivo,
             usuario=request.user
         )
-        
+
         # Eliminar el cliente
         cliente.delete()
-        
+
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, AdminOnlyPermission])
-def generar_token_cliente(request, cliente_id):
+def generar_token_cliente(_, cliente_id):
+    """Genera un token para un cliente específico."""
     try:
         cliente = Cliente.objects.get(pk=cliente_id)
         token, _ = ClienteToken.objects.get_or_create(cliente=cliente)
         return Response({'token': token.key, 'cliente_id': cliente.id})
     except Cliente.DoesNotExist:
         return Response({'error': 'Cliente no encontrado'}, status=404)
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=500)

@@ -2,7 +2,7 @@
 """Configuración del admin para la app de clientes."""
 
 from django.contrib import admin
-from .models import Cliente, Role
+from .models import Cliente
 
 
 @admin.register(Cliente)

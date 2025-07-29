@@ -1,11 +1,11 @@
 
 """Serializers para la app de facturación."""
 
-from rest_framework import serializers
 from django.db import transaction
-from .models import Factura, FacturaItem
-from apps.productos.models import Producto
+from rest_framework import serializers
+
 from apps.clientes.models import Cliente
+from .models import Factura, FacturaItem
 
 
 class FacturaItemSerializer(serializers.ModelSerializer):
@@ -22,7 +22,8 @@ class FacturaItemSerializer(serializers.ModelSerializer):
         if cantidad <= 0:
             raise serializers.ValidationError("La cantidad debe ser mayor que 0")
         if producto.stock < cantidad:
-            raise serializers.ValidationError(f"No hay suficiente stock para {producto.nombre}")
+            error_msg = f"No hay suficiente stock para {producto.nombre}"
+            raise serializers.ValidationError(error_msg)
         return data
 
 

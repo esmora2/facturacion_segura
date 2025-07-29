@@ -54,7 +54,7 @@ class RoleBasedAccessMiddleware:
     """
     def __init__(self, get_response):
         self.get_response = get_response
-        
+
         # Mapeo de URLs a roles permitidos
         self.url_role_mapping = {
             '/clientes/': ['Administrador', 'Secretario'],
@@ -73,14 +73,22 @@ class RoleBasedAccessMiddleware:
                     if request.user.role not in allowed_roles:
                         # Si es una request de API, devolver JSON
                         if request.path.startswith('/api/'):
+                            error_msg = (
+                                f'No tienes permiso para acceder a este módulo. '
+                                f'Rol requerido: {", ".join(allowed_roles)}'
+                            )
                             return JsonResponse({
-                                'error': f'No tienes permiso para acceder a este módulo. Rol requerido: {", ".join(allowed_roles)}',
+                                'error': error_msg,
                                 'code': 'INSUFFICIENT_ROLE'
                             }, status=403)
-                        
+
                         # Para requests web, redirigir a home con mensaje
-                        messages.error(request, f'No tienes permiso para acceder a este módulo. Rol requerido: {", ".join(allowed_roles)}')
+                        error_msg = (
+                            f'No tienes permiso para acceder a este módulo. '
+                            f'Rol requerido: {", ".join(allowed_roles)}'
+                        )
+                        messages.error(request, error_msg)
                         return redirect('home')
-        
+
         response = self.get_response(request)
         return response

@@ -13,5 +13,4 @@ class Producto(models.Model):
 
     def __str__(self):
         """Representación legible del producto."""
-        return self.nombre
-
+        return str(self.nombre)

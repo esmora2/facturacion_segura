@@ -16,6 +16,6 @@ class ClienteTokenAuthentication(BaseAuthentication):
         key = auth_header.split(' ')[1]
         try:
             token = ClienteToken.objects.get(key=key)
-        except ClienteToken.DoesNotExist:
-            raise exceptions.AuthenticationFailed('Token inválido')
+        except ClienteToken.DoesNotExist as exc:
+            raise exceptions.AuthenticationFailed('Token inválido') from exc
         return (token.cliente, None)

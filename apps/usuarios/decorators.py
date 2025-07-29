@@ -1,12 +1,11 @@
-from django.core.exceptions import PermissionDenied
-from functools import wraps
-
 """Decorators for the usuarios app."""
 
 from functools import wraps
 from django.core.exceptions import PermissionDenied
 
+
 def role_required(*allowed_roles):
+    """Decorator para requerir roles específicos."""
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
