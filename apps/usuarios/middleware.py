@@ -1,3 +1,6 @@
+
+"""Middleware for the usuarios app."""
+
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -6,6 +9,8 @@ from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+API_PREFIX = '/api/'
+SESSION_ENDED_MSG = 'Su sesión ha finalizado, contacte con el administrador.'
 
 class CheckUserIsActiveMiddleware:
     """
@@ -18,40 +23,30 @@ class CheckUserIsActiveMiddleware:
     def __call__(self, request):
         if request.user.is_authenticated:
             try:
-                # Verificar si el usuario aún existe en la base de datos
                 current_user = User.objects.get(pk=request.user.pk)
-                
-                # Verificar si el usuario está inactivo
                 if not current_user.is_active:
-                    logout(request)
-                    
-                    # Si es una request de API, devolver JSON
-                    if request.path.startswith('/api/'):
-                        return JsonResponse({
-                            'error': 'Su sesión ha finalizado, contacte con el administrador.',
-                            'code': 'USER_INACTIVE'
-                        }, status=401)
-                    
-                    # Para requests web, redirigir con mensaje
-                    return redirect(f"{reverse('login')}?inactive=1")
-                    
+                    return self._handle_inactive_user(request)
             except User.DoesNotExist:
-                # El usuario fue eliminado de la base de datos
-                logout(request)
-                
-                # Si es una request de API, devolver JSON
-                if request.path.startswith('/api/'):
-                    return JsonResponse({
-                        'error': 'Su sesión ha finalizado, contacte con el administrador.',
-                        'code': 'USER_DELETED'
-                    }, status=401)
-                
-                # Para requests web, redirigir con mensaje
-                return redirect(f"{reverse('login')}?deleted=1")
-        
-        response = self.get_response(request)
-        return response
+                return self._handle_deleted_user(request)
+        return self.get_response(request)
 
+    def _handle_inactive_user(self, request):
+        logout(request)
+        if request.path.startswith(API_PREFIX):
+            return JsonResponse({
+                'error': SESSION_ENDED_MSG,
+                'code': 'USER_INACTIVE'
+            }, status=401)
+        return redirect(f"{reverse('login')}?inactive=1")
+
+    def _handle_deleted_user(self, request):
+        logout(request)
+        if request.path.startswith(API_PREFIX):
+            return JsonResponse({
+                'error': SESSION_ENDED_MSG,
+                'code': 'USER_DELETED'
+            }, status=401)
+        return redirect(f"{reverse('login')}?deleted=1")
 
 class RoleBasedAccessMiddleware:
     """

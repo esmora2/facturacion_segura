@@ -59,6 +59,10 @@ class ClientePermission(BasePermission):
         )
 
 
+"""Permissions for the usuarios app."""
+
+from rest_framework.permissions import BasePermission
+
 class ProductoPermission(BasePermission):
     """Permiso específico para el módulo de Productos"""
     

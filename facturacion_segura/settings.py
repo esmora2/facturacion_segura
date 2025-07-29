@@ -1,5 +1,8 @@
-from decouple import config
+
+"""Configuración principal de Django para facturacion_segura."""
+
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -1,7 +1,11 @@
+
+"""Modelos para la app de auditorías."""
+
 from django.db import models
-from django.conf import settings  # <- IMPORTANTE agregar esto
+from django.conf import settings
 
 class LogAuditoria(models.Model):
+    """Modelo para logs de auditoría de eliminaciones."""
     modelo_afectado = models.CharField(max_length=100)
     objeto_id = models.IntegerField()
     descripcion_objeto = models.TextField()
@@ -10,4 +14,5 @@ class LogAuditoria(models.Model):
     fecha_eliminacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """Representación legible del log de auditoría."""
         return f"{self.modelo_afectado} {self.objeto_id} eliminado por {self.usuario}"

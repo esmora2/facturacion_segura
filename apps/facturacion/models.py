@@ -1,8 +1,11 @@
+
+"""Modelos para la app de facturación."""
+
+from decimal import Decimal
 from django.db import models, transaction
 from django.conf import settings
 from apps.productos.models import Producto
 from apps.clientes.models import Cliente
-from decimal import Decimal
 
 class Factura(models.Model):
     ESTADOS = [
@@ -28,6 +31,7 @@ class Factura(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
+        """Representación legible de la factura."""
         return f"Factura #{self.id} - {'Anulada' if self.anulada else 'Activa'}"
 
     def calcular_totales(self):
@@ -179,6 +183,7 @@ class FacturaItem(models.Model):
     cantidad = models.PositiveIntegerField()
 
     def __str__(self):
+        """Representación legible del item de factura."""
         return f"{self.producto.nombre} x {self.cantidad}"
 
     def save(self, *args, **kwargs):
