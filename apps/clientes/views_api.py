@@ -10,6 +10,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+# Silk imports
+from silk.profiling.profiler import silk_profile
+
 # Apps imports
 from apps.auditorias.models import LogAuditoria
 from apps.usuarios.permissions import AdminOnlyPermission, ClientePermission
@@ -25,7 +28,6 @@ class ClienteViewSet(viewsets.ModelViewSet):
     - Administrador, Secretario: Acceso completo (CRUD)
     - Ventas: Solo lectura (GET)
     """
-    queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated, ClientePermission]
 
@@ -33,12 +35,16 @@ class ClienteViewSet(viewsets.ModelViewSet):
         """
         Filtrar queryset basado en el rol del usuario.
         Administradores, Secretarios y personal de Ventas pueden ver clientes.
+        Optimizado para evitar N+1 queries.
         """
         user = self.request.user
         if user.is_superuser or user.role in ['Administrador', 'Secretario', 'Ventas']:
-            return Cliente.objects.all()
+            # Prefetch related para optimizar consultas
+            # Nota: usar 'factura_set' porque es la relación inversa desde Cliente a Factura
+            return Cliente.objects.select_related().prefetch_related('factura_set').all()
         return Cliente.objects.none()
 
+    @silk_profile(name='ClienteViewSet.list')
     def list(self, request, *args, **kwargs):
         """
         Listar clientes.
@@ -50,6 +56,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='eliminar-con-motivo')
+    @silk_profile(name='ClienteViewSet.eliminar_con_motivo')
     def eliminar_con_motivo(self, request, pk=None):
         """
         Endpoint personalizado para eliminar un cliente con motivo de auditoría.
@@ -72,6 +79,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         cliente.delete()
         return Response({'mensaje': 'Cliente eliminado con motivo registrado.'}, status=status.HTTP_204_NO_CONTENT)
 
+    @silk_profile(name='ClienteViewSet.destroy')
     def destroy(self, request, *args, **kwargs):
         """
         Sobrescribir destroy para crear log de auditoría automáticamente
@@ -98,6 +106,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, AdminOnlyPermission])
+@silk_profile(name='generar_token_cliente')
 def generar_token_cliente(_, cliente_id):
     """Genera un token para un cliente específico."""
     try:

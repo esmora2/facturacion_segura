@@ -11,6 +11,10 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
+
+# Silk imports
+from silk.profiling.profiler import silk_profile
+
 from .models import Factura
 from .serializers import FacturaSerializer
 from django.db.models import Count
@@ -24,9 +28,18 @@ class FacturaViewSet(viewsets.ModelViewSet):
     ViewSet para el módulo de Facturación.
     Acceso permitido solo a: Administrador, Ventas
     """
-    queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
     permission_classes = [IsAuthenticated, FacturaPermission]
+
+    def get_queryset(self):
+        """
+        Optimizar queryset para evitar N+1 queries.
+        """
+        return Factura.objects.select_related(
+            'cliente', 'creador'
+        ).prefetch_related(
+            'items__producto'
+        ).all()
 
     def _generar_pdf_factura(self, factura):
         """
@@ -381,7 +394,8 @@ class FacturaViewSet(viewsets.ModelViewSet):
         factura.marcar_pagada()
         return Response({"status": "Factura marcada como pagada"})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='anular')
+    @silk_profile(name='FacturaViewSet.anular_factura')
     def anular_factura(self, request, pk=None):
         """
         Anular una factura y restituir automáticamente el stock.

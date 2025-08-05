@@ -41,6 +41,8 @@ MIDDLEWARE = [
     'apps.usuarios.middleware.CheckUserIsActiveMiddleware',
     'apps.usuarios.middleware.RoleBasedAccessMiddleware',
     'silk.middleware.SilkyMiddleware',
+    # Middleware para profiling automático de APIs
+    'apps.auditorias.middleware.AutoSilkProfilingMiddleware',
 ]
 
 ROOT_URLCONF = 'facturacion_segura.urls'
@@ -75,6 +77,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -124,3 +127,16 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+# Configuración de Django Silk para profiling
+SILKY_PYTHON_PROFILER = True
+SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER_RESULT_PATH = BASE_DIR / 'profiles'
+SILKY_ANALYZE_QUERIES = True
+SILKY_RECORD_REQUESTS = True
+SILKY_INTERCEPT_PERCENT = 100  # Captura el 100% de las requests
+SILKY_MAX_REQUEST_BODY_SIZE = -1  # Sin límite en el tamaño del body
+SILKY_MAX_RESPONSE_BODY_SIZE = -1  # Sin límite en el tamaño de la respuesta
+SILKY_AUTHENTICATION = True  # Requiere autenticación para acceder a Silk
+SILKY_AUTHORISATION = True  # Requiere autorización
+SILKY_PERMISSIONS = lambda user: user.is_superuser  # Solo superusuarios pueden acceder

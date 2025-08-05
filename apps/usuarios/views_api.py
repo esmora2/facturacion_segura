@@ -206,3 +206,65 @@ class UserViewSet(viewsets.ModelViewSet):
             'username': usuario_objetivo.username,
             'token_acceso': token.key
         }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def login_api(request):
+    """
+    Endpoint optimizado para login via API.
+    
+    POST /api/auth/login/
+    Body: {
+        "username": "usuario",
+        "password": "contraseña"
+    }
+    
+    Response: {
+        "token": "abc123...",
+        "user": {
+            "id": 1,
+            "username": "usuario",
+            "email": "email@ejemplo.com",
+            "role": "Administrador",
+            "is_active": true
+        }
+    }
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response({
+            'error': 'Username y password son requeridos'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Autenticar usuario
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        logger.warning(f"Intento de login fallido para usuario: {username}")
+        return Response({
+            'error': 'Credenciales inválidas'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if not user.is_active:
+        return Response({
+            'error': 'Usuario inactivo'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Obtener o crear token
+    token, created = Token.objects.get_or_create(user=user)
+    
+    # Log de login exitoso
+    logger.info(f"Login exitoso para usuario: {username}")
+    
+    return Response({
+        'token': token.key,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': getattr(user, 'role', None),
+            'is_active': user.is_active
+        }
+    }, status=status.HTTP_200_OK)

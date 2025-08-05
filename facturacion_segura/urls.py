@@ -17,15 +17,16 @@ from apps.productos.views import lista_productos
 from apps.productos.views_api import ProductoViewSet
 from apps.facturacion.views import lista_facturas, eliminar_factura
 from apps.facturacion.views_api import FacturaViewSet
-from apps.usuarios.views_api import me_view, UserViewSet, validate_password
+from apps.usuarios.views_api import me_view, UserViewSet, validate_password, login_api
+from apps.usuarios.api_documentation import api_documentation
 from apps.auditorias.views_api import LogAuditoriaViewSet
 
 router = routers.DefaultRouter()
-router.register(r'api/clientes', ClienteViewSet)
-router.register(r'api/productos', ProductoViewSet)
-router.register(r'api/facturas', FacturaViewSet)
-router.register(r'api/usuarios', UserViewSet)  # Solo para administradores
-router.register(r'api/logs', LogAuditoriaViewSet)
+router.register(r'api/clientes', ClienteViewSet, basename='cliente')
+router.register(r'api/productos', ProductoViewSet, basename='producto')
+router.register(r'api/facturas', FacturaViewSet, basename='factura')
+router.register(r'api/usuarios', UserViewSet, basename='usuario')  # Solo para administradores
+router.register(r'api/logs', LogAuditoriaViewSet, basename='logauditoria')
 
 urlpatterns = [
     # Admin
@@ -53,6 +54,12 @@ urlpatterns = [
 
     # Endpoint para obtener token
     path('api/token/', obtain_auth_token, name='api_token_auth'),
+    
+    # Endpoint mejorado para login
+    path('api/auth/login/', login_api, name='api_login'),
+    
+    # Documentación de la API
+    path('api/docs/', api_documentation, name='api_documentation'),
 
     # Endpoint para obtener datos del usuario autenticado
     path('api/me/', me_view, name='api_me'),
