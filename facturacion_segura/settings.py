@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', cast=bool)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.9.7.150', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.9.7.150', '10.40.0.99', '*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -140,3 +140,6 @@ SILKY_MAX_RESPONSE_BODY_SIZE = -1  # Sin límite en el tamaño de la respuesta
 SILKY_AUTHENTICATION = True  # Requiere autenticación para acceder a Silk
 SILKY_AUTHORISATION = True  # Requiere autorización
 SILKY_PERMISSIONS = lambda user: user.is_superuser  # Solo superusuarios pueden acceder
+
+SILK_AUTHENTICATION = True  # Requiere login
+SILK_AUTHORISATION = True   # Solo staff/superuser puede acceder
