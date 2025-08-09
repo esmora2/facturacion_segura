@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'apps.productos',
     'apps.facturacion',
     'apps.auditorias',
+    'pagos',
     'silk',
 ]
 

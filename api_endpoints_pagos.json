@@ -1,0 +1,382 @@
+{
+  "sistema_pagos_api": {
+    "base_url": "http://localhost:8000",
+    "version": "1.0",
+    "descripcion": "API REST para sistema de pagos de facturas",
+    
+    "autenticacion": {
+      "usuarios_sistema": {
+        "descripcion": "Para administradores y usuarios con rol Pagos",
+        "header": "Authorization: Token <user_token>",
+        "como_obtener": "POST /api/token/ con username/password"
+      },
+      "clientes": {
+        "descripcion": "Para clientes usando token personalizado",
+        "header": "Authorization: Token <cliente_token>",
+        "como_obtener": "Generado por administrador en /clientes/{id}/generar-token/"
+      }
+    },
+    
+    "endpoints": {
+      "autenticacion": {
+        "login_usuario": {
+          "url": "/api/token/",
+          "method": "POST",
+          "body": {
+            "username": "string",
+            "password": "string"
+          },
+          "response": {
+            "token": "string"
+          }
+        },
+        "login_mejorado": {
+          "url": "/api/auth/login/",
+          "method": "POST",
+          "body": {
+            "username": "string",
+            "password": "string"
+          },
+          "response": {
+            "token": "string",
+            "user": {
+              "id": "int",
+              "username": "string",
+              "role": "string"
+            }
+          }
+        },
+        "info_usuario": {
+          "url": "/api/me/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <user_token>"
+          },
+          "response": {
+            "id": "int",
+            "username": "string",
+            "role": "string",
+            "email": "string"
+          }
+        }
+      },
+      
+      "administracion_pagos": {
+        "listar_pagos": {
+          "url": "/api/pagos/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <admin_token>"
+          },
+          "response": {
+            "count": "int",
+            "results": [
+              {
+                "id": "int",
+                "factura": "int",
+                "factura_numero": "string",
+                "factura_total": "decimal",
+                "tipo_pago": "string",
+                "monto": "decimal",
+                "numero_transaccion": "string",
+                "observaciones": "string",
+                "estado": "string",
+                "pagado_por": "int",
+                "cliente_nombre": "string",
+                "validado_por": "int|null",
+                "validador_nombre": "string|null",
+                "fecha_pago": "datetime",
+                "fecha_validacion": "datetime|null"
+              }
+            ]
+          }
+        },
+        
+        "pagos_pendientes": {
+          "url": "/api/pagos/pendientes/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <admin_token>"
+          },
+          "response": {
+            "count": "int",
+            "results": [
+              {
+                "id": "int",
+                "factura": "int",
+                "factura_numero": "string",
+                "factura_total": "decimal",
+                "tipo_pago": "string",
+                "monto": "decimal",
+                "numero_transaccion": "string",
+                "cliente_nombre": "string",
+                "cliente_email": "string",
+                "fecha_pago": "datetime",
+                "dias_pendiente": "int"
+              }
+            ]
+          }
+        },
+        
+        "detalle_pago": {
+          "url": "/api/pagos/{id}/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <admin_token>"
+          },
+          "response": {
+            "id": "int",
+            "factura_info": {
+              "id": "int",
+              "numero_factura": "string",
+              "total": "decimal",
+              "estado": "string",
+              "fecha": "datetime"
+            },
+            "cliente_info": {
+              "id": "int",
+              "nombre": "string",
+              "email": "string"
+            },
+            "validador_info": {
+              "id": "int",
+              "username": "string",
+              "role": "string"
+            },
+            "historial": [
+              {
+                "id": "int",
+                "estado_anterior": "string",
+                "estado_nuevo": "string",
+                "usuario_nombre": "string",
+                "fecha_cambio": "datetime",
+                "observaciones": "string"
+              }
+            ]
+          }
+        },
+        
+        "validar_pago": {
+          "url": "/api/pagos/{id}/validar/",
+          "method": "POST",
+          "headers": {
+            "Authorization": "Token <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "accion": "aprobar|rechazar",
+            "motivo": "string (requerido para rechazar)"
+          },
+          "response_aprobado": {
+            "success": true,
+            "message": "Pago #1 aprobado exitosamente",
+            "pago_id": "int",
+            "nuevo_estado": "aprobado",
+            "fecha_validacion": "datetime"
+          },
+          "response_rechazado": {
+            "success": true,
+            "message": "Pago #1 rechazado",
+            "pago_id": "int",
+            "nuevo_estado": "rechazado",
+            "fecha_validacion": "datetime"
+          }
+        },
+        
+        "estadisticas": {
+          "url": "/api/pagos/estadisticas/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <admin_token>"
+          },
+          "response": {
+            "total_pagos": "int",
+            "pagos_pendientes": "int",
+            "pagos_aprobados": "int",
+            "pagos_rechazados": "int",
+            "monto_total_aprobado": "float",
+            "pagos_ultimos_30_dias": "int",
+            "distribucion_tipos_pago": [
+              {
+                "tipo_pago": "string",
+                "count": "int"
+              }
+            ]
+          }
+        }
+      },
+      
+      "api_clientes": {
+        "facturas_pendientes": {
+          "url": "/api/cliente/facturas-pendientes/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <cliente_token>"
+          },
+          "response": {
+            "count": "int",
+            "facturas_pendientes": [
+              {
+                "id": "int",
+                "numero_factura": "string",
+                "total": "decimal",
+                "fecha": "datetime",
+                "estado": "string",
+                "creador": "string"
+              }
+            ]
+          }
+        },
+        
+        "registrar_pago": {
+          "url": "/api/cliente/registrar-pago/",
+          "method": "POST",
+          "headers": {
+            "Authorization": "Token <cliente_token>",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "factura": "int (ID de la factura)",
+            "tipo_pago": "efectivo|tarjeta|transferencia|cheque",
+            "monto": "decimal (debe coincidir con total factura)",
+            "numero_transaccion": "string (código comprobante)",
+            "observaciones": "string (opcional)"
+          },
+          "response": {
+            "success": true,
+            "message": "Pago registrado exitosamente. Está pendiente de validación.",
+            "pago": {
+              "id": "int",
+              "factura": "int",
+              "factura_numero": "string",
+              "factura_total": "decimal",
+              "tipo_pago": "string",
+              "monto": "decimal",
+              "numero_transaccion": "string",
+              "observaciones": "string",
+              "estado": "pendiente",
+              "fecha_pago": "datetime"
+            }
+          },
+          "validaciones": [
+            "Solo puede pagar sus propias facturas",
+            "La factura debe estar en estado EMITIDA",
+            "El monto debe coincidir con el total de la factura",
+            "La factura no debe estar anulada o ya pagada"
+          ]
+        },
+        
+        "mis_pagos": {
+          "url": "/api/cliente/mis-pagos/",
+          "method": "GET",
+          "headers": {
+            "Authorization": "Token <cliente_token>"
+          },
+          "response": {
+            "count": "int",
+            "pagos": [
+              {
+                "id": "int",
+                "factura": "int",
+                "factura_numero": "string",
+                "factura_total": "decimal",
+                "tipo_pago": "string",
+                "monto": "decimal",
+                "numero_transaccion": "string",
+                "observaciones": "string",
+                "estado": "pendiente|aprobado|rechazado",
+                "validado_por": "int|null",
+                "validador_nombre": "string|null",
+                "fecha_pago": "datetime",
+                "fecha_validacion": "datetime|null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    
+    "modelos": {
+      "pago": {
+        "estados": {
+          "pendiente": "Pago registrado, esperando validación",
+          "aprobado": "Pago aprobado, factura marcada como pagada",
+          "rechazado": "Pago rechazado, factura sigue pendiente"
+        },
+        "tipos_pago": {
+          "efectivo": "Pago en efectivo",
+          "tarjeta": "Pago con tarjeta de crédito/débito",
+          "transferencia": "Transferencia bancaria",
+          "cheque": "Pago con cheque"
+        }
+      },
+      "factura": {
+        "estados": {
+          "BORRADOR": "Factura en construcción",
+          "EMITIDA": "Factura emitida, pendiente de pago",
+          "PAGADA": "Factura pagada",
+          "ANULADA": "Factura anulada"
+        }
+      }
+    },
+    
+    "codigos_error": {
+      "400": "Datos inválidos o faltantes",
+      "401": "No autenticado o token inválido",
+      "403": "Sin permisos para realizar la acción",
+      "404": "Recurso no encontrado",
+      "500": "Error interno del servidor"
+    },
+    
+    "flujo_trabajo": {
+      "1": "Cliente consulta sus facturas pendientes",
+      "2": "Cliente registra pago para una factura específica",
+      "3": "Pago queda en estado 'pendiente'",
+      "4": "Administrador/Validador revisa pagos pendientes",
+      "5": "Administrador/Validador aprueba o rechaza el pago",
+      "6": "Si aprobado: factura pasa a 'PAGADA', cliente recibe notificación",
+      "7": "Si rechazado: factura mantiene 'EMITIDA', cliente recibe motivo"
+    },
+    
+    "ejemplos_postman": {
+      "registrar_pago_cliente": {
+        "method": "POST",
+        "url": "{{base_url}}/api/cliente/registrar-pago/",
+        "headers": {
+          "Authorization": "Token {{cliente_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "factura": 1,
+          "tipo_pago": "transferencia",
+          "monto": "1380.00",
+          "numero_transaccion": "TRF-2025-001234",
+          "observaciones": "Transferencia desde banco ABC"
+        }
+      },
+      "aprobar_pago_admin": {
+        "method": "POST",
+        "url": "{{base_url}}/api/pagos/1/validar/",
+        "headers": {
+          "Authorization": "Token {{admin_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "accion": "aprobar"
+        }
+      },
+      "rechazar_pago_admin": {
+        "method": "POST",
+        "url": "{{base_url}}/api/pagos/1/validar/",
+        "headers": {
+          "Authorization": "Token {{admin_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "accion": "rechazar",
+          "motivo": "Número de transacción inválido"
+        }
+      }
+    }
+  }
+}

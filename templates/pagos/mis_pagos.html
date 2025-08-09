@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pagos - Sistema de Facturación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .pago-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+        .estado {
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .estado.pendiente { background-color: #ffc107; }
+        .estado.aprobado { background-color: #28a745; }
+        .estado.rechazado { background-color: #dc3545; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .btn-secondary { background: #6c757d; color: white; }
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .alert-info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+        .alert-warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Mis Pagos</h1>
+            {% if cliente %}
+                <p>Cliente: <strong>{{ cliente.nombre }}</strong> ({{ cliente.email }})</p>
+            {% endif %}
+        </div>
+
+        {% if not cliente %}
+            <div class="alert alert-warning">
+                <h4>⚠️ No se encontró información de cliente</h4>
+                <p>No hay un cliente asociado con tu usuario.</p>
+            </div>
+        {% elif not pagos %}
+            <div class="alert alert-info">
+                <h4>ℹ️ No tienes pagos registrados</h4>
+                <p>Aún no has realizado ningún pago.</p>
+            </div>
+        {% else %}
+            {% for pago in pagos %}
+                <div class="pago-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3>Pago #{{ pago.id }}</h3>
+                        <span class="estado {{ pago.estado }}">{{ pago.get_estado_display }}</span>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div>
+                            <strong>📄 Factura:</strong> #{{ pago.factura.numero_factura|default:pago.factura.id }}
+                        </div>
+                        <div>
+                            <strong>💰 Monto:</strong> ${{ pago.monto }}
+                        </div>
+                        <div>
+                            <strong>💳 Tipo de Pago:</strong> {{ pago.get_tipo_pago_display }}
+                        </div>
+                        <div>
+                            <strong>🔢 Transacción:</strong> {{ pago.numero_transaccion }}
+                        </div>
+                        <div>
+                            <strong>📅 Fecha del Pago:</strong> {{ pago.fecha_pago|date:"d/m/Y H:i" }}
+                        </div>
+                        {% if pago.fecha_validacion %}
+                            <div>
+                                <strong>✅ Fecha de Validación:</strong> {{ pago.fecha_validacion|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                        {% if pago.validado_por %}
+                            <div>
+                                <strong>👤 Validado por:</strong> {{ pago.validado_por.username }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if pago.observaciones %}
+                        <div style="margin-top: 10px;">
+                            <strong>📝 Observaciones:</strong>
+                            <p style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                                {{ pago.observaciones }}
+                            </p>
+                        </div>
+                    {% endif %}
+                    
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
+                        {% if pago.estado == 'pendiente' %}
+                            ⏳ Su pago está siendo revisado por nuestro equipo.
+                        {% elif pago.estado == 'aprobado' %}
+                            ✅ Su pago ha sido aprobado. La factura está marcada como pagada.
+                        {% elif pago.estado == 'rechazado' %}
+                            ❌ Su pago fue rechazado. Revise las observaciones o contacte con soporte.
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/" class="btn btn-secondary">🏠 Volver al Inicio</a>
+        </div>
+    </div>
+</body>
+</html>

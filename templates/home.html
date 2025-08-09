@@ -78,6 +78,19 @@
             {% endif %}
         </div>
 
+        <!-- Módulo de Pagos -->
+        <div class="module-card">
+            <h3>💳 Gestión de Pagos</h3>
+            <p>Validación y administración de pagos de facturas.</p>
+            {% if user.is_superuser or user.role == 'Administrador' or user.role == 'Pagos' %}
+                <a href="/pagos/pendientes/" class="btn">Validar Pagos</a>
+                <a href="/api/pagos/" class="btn" target="_blank">API Pagos</a>
+            {% else %}
+                <a href="/mis-pagos/" class="btn">Mis Pagos</a>
+                <p class="access-denied">❌ Validación de pagos: Solo Administradores o rol Pagos</p>
+            {% endif %}
+        </div>
+
         <!-- Módulo de Usuarios (Solo Administradores) -->
         {% if user.is_superuser or user.role == 'Administrador' %}
         <div class="module-card">

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos Pendientes - Sistema de Facturación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .pago-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+        .pago-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .estado {
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .estado.pendiente { background-color: #ffc107; }
+        .estado.aprobado { background-color: #28a745; }
+        .estado.rechazado { background-color: #dc3545; }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:hover { opacity: 0.8; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .alert-info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Validación de Pagos</h1>
+            <p>Gestión de pagos pendientes de aprobación</p>
+        </div>
+
+        <div class="stats">
+            <h3>📊 Estadísticas</h3>
+            <p><strong>Total de pagos pendientes:</strong> {{ total_pendientes }}</p>
+        </div>
+
+        {% if total_pendientes == 0 %}
+            <div class="alert alert-info">
+                <h4>✅ No hay pagos pendientes</h4>
+                <p>Todos los pagos han sido procesados.</p>
+            </div>
+        {% else %}
+            {% for pago in pagos_pendientes %}
+                <div class="pago-card">
+                    <div class="pago-header">
+                        <h3>Pago #{{ pago.id }}</h3>
+                        <span class="estado {{ pago.estado }}">{{ pago.get_estado_display }}</span>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div>
+                            <strong>📄 Factura:</strong> #{{ pago.factura.numero_factura|default:pago.factura.id }}
+                        </div>
+                        <div>
+                            <strong>💰 Monto:</strong> ${{ pago.monto }}
+                        </div>
+                        <div>
+                            <strong>👤 Cliente:</strong> {{ pago.pagado_por.nombre }}
+                        </div>
+                        <div>
+                            <strong>📧 Email:</strong> {{ pago.pagado_por.email }}
+                        </div>
+                        <div>
+                            <strong>💳 Tipo de Pago:</strong> {{ pago.get_tipo_pago_display }}
+                        </div>
+                        <div>
+                            <strong>🔢 Transacción:</strong> {{ pago.numero_transaccion }}
+                        </div>
+                        <div>
+                            <strong>📅 Fecha:</strong> {{ pago.fecha_pago|date:"d/m/Y H:i" }}
+                        </div>
+                        <div>
+                            <strong>💵 Total Factura:</strong> ${{ pago.factura.total }}
+                        </div>
+                    </div>
+                    
+                    {% if pago.observaciones %}
+                        <div style="margin-top: 10px;">
+                            <strong>📝 Observaciones:</strong>
+                            <p style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                                {{ pago.observaciones }}
+                            </p>
+                        </div>
+                    {% endif %}
+                    
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <a href="/pagos/{{ pago.id }}/" class="btn btn-primary">👁️ Ver Detalle</a>
+                        <button class="btn btn-success" onclick="aprobarPago({{ pago.id }})">✅ Aprobar</button>
+                        <button class="btn btn-danger" onclick="rechazarPago({{ pago.id }})">❌ Rechazar</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/" class="btn btn-secondary">🏠 Volver al Inicio</a>
+            <a href="/api/pagos/" class="btn btn-primary" target="_blank">🔗 API de Pagos</a>
+        </div>
+    </div>
+
+    <!-- Modal para rechazar pago -->
+    <div id="modalRechazo" class="modal">
+        <div class="modal-content">
+            <h3>❌ Rechazar Pago</h3>
+            <form id="formRechazo">
+                {% csrf_token %}
+                <input type="hidden" id="pagoIdRechazo" name="pago_id">
+                <input type="hidden" name="accion" value="rechazar">
+                
+                <div class="form-group">
+                    <label for="motivo">Motivo del rechazo:</label>
+                    <textarea id="motivo" name="motivo" rows="4" required 
+                              placeholder="Explique el motivo del rechazo..."></textarea>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function aprobarPago(pagoId) {
+            if (confirm('¿Está seguro de que desea aprobar este pago?')) {
+                enviarValidacion(pagoId, 'aprobar', '');
+            }
+        }
+
+        function rechazarPago(pagoId) {
+            document.getElementById('pagoIdRechazo').value = pagoId;
+            document.getElementById('modalRechazo').style.display = 'block';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalRechazo').style.display = 'none';
+            document.getElementById('formRechazo').reset();
+        }
+
+        function enviarValidacion(pagoId, accion, motivo) {
+            const formData = new FormData();
+            formData.append('accion', accion);
+            formData.append('motivo', motivo);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch(`/pagos/${pagoId}/validar/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar la solicitud');
+            });
+        }
+
+        // Manejar envío del formulario de rechazo
+        document.getElementById('formRechazo').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const pagoId = document.getElementById('pagoIdRechazo').value;
+            const motivo = document.getElementById('motivo').value;
+            
+            cerrarModal();
+            enviarValidacion(pagoId, 'rechazar', motivo);
+        });
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalRechazo');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+    </script>
+</body>
+</html>

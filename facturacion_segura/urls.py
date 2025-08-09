@@ -69,6 +69,10 @@ urlpatterns = [
 
     # Endpoint protegido para facturas de cliente por token personalizado
     path('api/', include('apps.facturacion.urls_cliente_api')),
+    
+    # URLs de pagos
+    path('', include('pagos.urls')),
+    
     # Rutas API REST Framework
     path('', include(router.urls)),
 ]

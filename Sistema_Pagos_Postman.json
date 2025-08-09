@@ -1,0 +1,436 @@
+{
+  "info": {
+    "name": "Sistema de Pagos - Facturación",
+    "description": "API REST para sistema de pagos de facturas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/token/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "token", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Login successful\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set(\"admin_token\", jsonData.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Listar Facturas Borrador",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/facturas/?estado=BORRADOR",
+          "host": ["{{base_url}}"],
+          "path": ["api", "facturas", ""],
+          "query": [
+            {
+              "key": "estado",
+              "value": "BORRADOR"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Facturas retrieved\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.results && jsonData.results.length > 0) {",
+              "        pm.environment.set(\"factura_id\", jsonData.results[0].id);",
+              "        pm.environment.set(\"cliente_id\", jsonData.results[0].cliente);",
+              "        pm.environment.set(\"factura_total\", jsonData.results[0].total);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Emitir Factura (BORRADOR → EMITIDA)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"EMITIDA\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/facturas/{{factura_id}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "facturas", "{{factura_id}}", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Factura emitida\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.estado).to.eql(\"EMITIDA\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Generar Token Cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/clientes/{{cliente_id}}/generar-token/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "clientes", "{{cliente_id}}", "generar-token", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Token generado\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set(\"cliente_token\", jsonData.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cliente - Facturas Pendientes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{cliente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/cliente/facturas-pendientes/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cliente", "facturas-pendientes", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Facturas pendientes obtenidas\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.count).to.be.greaterThan(-1);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Cliente - Registrar Pago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{cliente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"factura\": {{factura_id}},\n  \"tipo_pago\": \"transferencia\",\n  \"monto\": \"{{factura_total}}\",\n  \"numero_transaccion\": \"TRF-{{$timestamp}}\",\n  \"observaciones\": \"Pago mediante transferencia bancaria - Postman Test\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/cliente/registrar-pago/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cliente", "registrar-pago", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Pago registrado\", function () {",
+              "    pm.response.to.have.status(201);",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set(\"pago_id\", jsonData.pago.id);",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Admin - Pagos Pendientes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/pagos/pendientes/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pagos", "pendientes", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Pagos pendientes consultados\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    console.log(\"Pagos pendientes:\", jsonData.count);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8A. Admin - Aprobar Pago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accion\": \"aprobar\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pagos/{{pago_id}}/validar/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pagos", "{{pago_id}}", "validar", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Pago aprobado\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.nuevo_estado).to.eql(\"aprobado\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8B. Admin - Rechazar Pago (Alternativo)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accion\": \"rechazar\",\n  \"motivo\": \"Número de transacción no válido o comprobante insuficiente\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/pagos/{{pago_id}}/validar/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pagos", "{{pago_id}}", "validar", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Pago rechazado\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.nuevo_estado).to.eql(\"rechazado\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Cliente - Mis Pagos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{cliente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/cliente/mis-pagos/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cliente", "mis-pagos", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Historial de pagos obtenido\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    console.log(\"Total pagos del cliente:\", jsonData.count);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Admin - Estadísticas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Token {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/pagos/estadisticas/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "pagos", "estadisticas", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Estadísticas obtenidas\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    console.log(\"Total pagos sistema:\", jsonData.total_pagos);",
+              "    console.log(\"Pendientes:\", jsonData.pagos_pendientes);",
+              "    console.log(\"Aprobados:\", jsonData.pagos_aprobados);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
