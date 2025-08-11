@@ -2,10 +2,12 @@
 """Serializers para la app de facturación."""
 
 from django.db import transaction
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.clientes.models import Cliente
 from .models import Factura, FacturaItem
+
+User = get_user_model()
 
 
 class FacturaItemSerializer(serializers.ModelSerializer):
@@ -30,7 +32,7 @@ class FacturaItemSerializer(serializers.ModelSerializer):
 class FacturaSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Factura."""
     items = FacturaItemSerializer(many=True, required=True)
-    cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
+    cliente = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role='Cliente'))
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     iva = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)

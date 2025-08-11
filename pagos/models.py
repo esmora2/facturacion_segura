@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.facturacion.models import Factura
-from apps.clientes.models import Cliente
 
 
 class Pago(models.Model):
@@ -57,9 +56,10 @@ class Pago(models.Model):
     
     # Usuarios involucrados
     pagado_por = models.ForeignKey(
-        Cliente,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='pagos_realizados',
+        limit_choices_to={'role': 'Cliente'},
         help_text="Cliente que realizó el pago"
     )
     validado_por = models.ForeignKey(

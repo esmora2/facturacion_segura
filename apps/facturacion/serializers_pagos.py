@@ -3,7 +3,8 @@
 from rest_framework import serializers
 from pagos.models import Pago
 from .models import Factura
-from apps.clientes.models import Cliente
+from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 
 class PagoSerializer(serializers.ModelSerializer):

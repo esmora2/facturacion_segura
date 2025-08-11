@@ -102,25 +102,24 @@ def validar_pago(request, pago_id):
 @login_required
 def mis_pagos(request):
     """Vista para que los usuarios vean sus propios pagos."""
-    # Buscar cliente asociado al usuario
-    try:
-        from apps.clientes.models import Cliente
-        cliente = Cliente.objects.get(email=request.user.email)
-        pagos = Pago.objects.filter(pagado_por=cliente).select_related(
-            'factura', 'validado_por'
-        ).order_by('-fecha_pago')
-        
-        context = {
-            'pagos': pagos,
-            'cliente': cliente
-        }
-        
-        return render(request, 'pagos/mis_pagos.html', context)
-        
-    except Cliente.DoesNotExist:
-        messages.error(request, "No se encontró un cliente asociado con tu usuario.")
-        context = {'pagos': [], 'cliente': None}
-        return render(request, 'pagos/mis_pagos.html', context)
+        # Verificar que el usuario sea un cliente
+    if not hasattr(request.user, 'role') or request.user.role != 'Cliente':
+        return render(request, 'pagos/mis_pagos.html', {
+            'error': 'Esta página es solo para clientes.'
+        })
+    
+    # El cliente es el usuario autenticado
+    cliente = request.user
+    pagos = Pago.objects.filter(pagado_por=cliente).select_related(
+        'factura', 'validado_por'
+    ).order_by('-fecha_pago')
+    
+    context = {
+        'pagos': pagos,
+        'cliente': cliente
+    }
+    
+    return render(request, 'pagos/mis_pagos.html', context)
 
 
 def _enviar_notificacion_aprobacion(pago):

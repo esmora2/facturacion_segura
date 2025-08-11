@@ -5,7 +5,6 @@ from decimal import Decimal
 from django.db import models, transaction
 from django.conf import settings
 from apps.productos.models import Producto
-from apps.clientes.models import Cliente
 
 class Factura(models.Model):
     ESTADOS = [
@@ -20,7 +19,7 @@ class Factura(models.Model):
     IVA_PORCENTAJE = Decimal('0.15')
 
     creador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='facturas_cliente', limit_choices_to={'role': 'Cliente'})
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR')
     anulada = models.BooleanField(default=False)  # Mantener por compatibilidad

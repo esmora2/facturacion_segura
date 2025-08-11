@@ -18,7 +18,7 @@ from .serializers_pagos import (
     PagoValidacionSerializer,
     FacturaClienteSerializer
 )
-from apps.clientes.models import Cliente, ClienteToken
+# from apps.clientes.models import Cliente, ClienteToken  # Ya no se usan - migrado a User model
 from apps.usuarios.permissions import AdminOnlyPermission
 from .permissions import AllowClientTokenAuth, PagosRolePermission
 
@@ -102,100 +102,28 @@ class PagoViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([AllowClientTokenAuth])
-def registrar_pago_cliente(request):
-    """
-    Endpoint para que los clientes registren pagos usando su token.
-    Header requerido: X-Client-Token: <cliente_token>
-    
-    IMPORTANTE: Usa AllowClientTokenAuth para bypass de autenticación Django
-    """
-    # Obtener token del header personalizado
-    client_token = request.META.get('HTTP_X_CLIENT_TOKEN', '')
-    
-    if not client_token:
-        return Response(
-            {'error': 'Header X-Client-Token requerido'}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    try:
-        # Verificar token del cliente
-        cliente_token = ClienteToken.objects.select_related('cliente').get(key=client_token)
-        cliente = cliente_token.cliente
-    except ClienteToken.DoesNotExist:
-        return Response(
-            {'error': 'Token de cliente inválido'}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+"""
+NOTA: Las funciones registrar_pago_cliente y facturas_cliente en este archivo 
+están OBSOLETAS y han sido reemplazadas por las versiones en pagos/views_api.py
+que usan autenticación estándar de Django.
 
-    # Validar datos del pago
-    serializer = PagoCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        factura_id = serializer.validated_data['factura'].id
-        
-        # Verificar que la factura pertenezca al cliente
-        try:
-            factura = Factura.objects.get(id=factura_id, cliente=cliente)
-        except Factura.DoesNotExist:
-            return Response(
-                {'error': 'La factura no existe o no pertenece al cliente'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+Las funciones obsoletas usaban ClienteToken personalizado que ya no existe.
+Ahora se usa el sistema estándar: /api/token/ + Authorization: Token <token>
+"""
 
-        # Crear el pago
-        pago = serializer.save(pagado_por=cliente)
-        
-        # Serializar respuesta
-        response_serializer = PagoSerializer(pago)
-        return Response({
-            'mensaje': 'Pago registrado exitosamente. Será validado por el equipo de pagos.',
-            'pago': response_serializer.data
-        }, status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# Funciones obsoletas comentadas - ver pagos/views_api.py para las nuevas implementaciones
 
+# @api_view(['POST'])
+# @permission_classes([AllowClientTokenAuth])
+# def registrar_pago_cliente(request):
+#     """OBSOLETO - Ver pagos/views_api.py"""
+#     pass
 
-@api_view(['GET'])
-@permission_classes([AllowClientTokenAuth])
-@silk_profile(name='facturas_cliente')
-def facturas_cliente(request):
-    """
-    Endpoint para que los clientes vean sus facturas pendientes de pago.
-    Header requerido: X-Client-Token: <cliente_token>
-    
-    IMPORTANTE: Usa AllowClientTokenAuth para bypass de autenticación Django
-    """
-    # Obtener token del header personalizado
-    client_token = request.META.get('HTTP_X_CLIENT_TOKEN', '')
-    if not client_token:
-        return Response(
-            {'error': 'Header X-Client-Token requerido'}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    try:
-        # Verificar token del cliente
-        cliente_token = ClienteToken.objects.select_related('cliente').get(key=client_token)
-        cliente = cliente_token.cliente
-    except ClienteToken.DoesNotExist:
-        return Response(
-            {'error': 'Token de cliente inválido'}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
-    # Obtener facturas del cliente que no están pagadas ni anuladas
-    facturas = Factura.objects.filter(
-        cliente=cliente,
-        estado__in=['PENDIENTE', 'EMITIDA']
-    ).prefetch_related('pagos').order_by('-fecha')
-    
-    serializer = FacturaClienteSerializer(facturas, many=True)
-    return Response({
-        'cliente': cliente.nombre,
-        'facturas': serializer.data
-    })
+# @api_view(['GET'])  
+# @permission_classes([AllowClientTokenAuth])
+# def facturas_cliente(request):
+#     """OBSOLETO - Ver pagos/views_api.py"""
+#     pass
 
 
 @api_view(['GET'])

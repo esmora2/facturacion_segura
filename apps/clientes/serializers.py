@@ -2,52 +2,25 @@
 """Serializers para la app de clientes."""
 
 from rest_framework import serializers
-from .models import Cliente, Role
+from django.contrib.auth import get_user_model
+from .models import Role
+
+User = get_user_model()
 
 
 class ClienteSerializer(serializers.ModelSerializer):
-    """Serializer para el modelo Cliente."""
-    roles = serializers.SerializerMethodField()
+    """Serializer para clientes (usuarios con role='Cliente')."""
 
     class Meta:
-        model = Cliente
-        fields = ['id', 'username', 'email', 'nombre', 'telefono', 'activo', 'role', 'roles', 'date_joined']
+        model = User
+        fields = ['id', 'username', 'email', 'nombre', 'telefono', 'is_active', 'role', 'date_joined']
+        read_only_fields = ['role']  # El rol no debe ser modificable desde esta API
 
-    def get_roles(self, obj):
-        """Serializar roles como lista de objetos con name."""
-        return [{"name": role.name} for role in obj.roles.all()]
-
-    def create(self, validated_data):
-        """Crear un cliente y asignar roles si se proveen en la request."""
-        request = self.context.get('request')
-        roles_data = []
-        if request and hasattr(request, 'data'):
-            roles_data = request.data.get('roles', [])
-        cliente = Cliente.objects.create(**validated_data)
-        for role_data in roles_data:
-            if isinstance(role_data, dict) and 'name' in role_data:
-                role, _ = Role.objects.get_or_create(name=role_data['name'])
-                cliente.roles.add(role)
-        return cliente
-
-    def update(self, instance, validated_data):
-        """Actualizar un cliente y sus roles si se proveen en la request."""
-        request = self.context.get('request')
-        roles_data = None
-        if request and hasattr(request, 'data') and 'roles' in request.data:
-            roles_data = request.data.get('roles', [])
-        instance.nombre = validated_data.get('nombre', instance.nombre)
-        instance.email = validated_data.get('email', instance.email)
-        instance.telefono = validated_data.get('telefono', instance.telefono)
-        instance.activo = validated_data.get('activo', instance.activo)
-        instance.save()
-        if roles_data is not None:
-            instance.roles.clear()
-            for role_data in roles_data:
-                if isinstance(role_data, dict) and 'name' in role_data:
-                    role, _ = Role.objects.get_or_create(name=role_data['name'])
-                    instance.roles.add(role)
-        return instance
+    def validate_role(self, value):
+        """Asegurar que solo se permitan clientes."""
+        if value != 'Cliente':
+            raise serializers.ValidationError("Solo se permiten usuarios con rol Cliente")
+        return value
 
 
 class ClienteLoginSerializer(serializers.Serializer):
@@ -61,15 +34,15 @@ class ClienteCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     
     class Meta:
-        model = Cliente
+        model = User
         fields = ['username', 'email', 'password', 'nombre', 'telefono']
     
     def create(self, validated_data):
         """Crear cliente con password encriptado."""
         password = validated_data.pop('password')
-        cliente = Cliente(**validated_data)
-        cliente.set_password(password)
-        cliente.role = 'Cliente'
-        cliente.activo = True
-        cliente.save()
-        return cliente
+        user = User(**validated_data)
+        user.set_password(password)
+        user.role = 'Cliente'
+        user.is_active = True
+        user.save()
+        return user

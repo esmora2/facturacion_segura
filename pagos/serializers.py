@@ -2,9 +2,11 @@
 
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from apps.facturacion.models import Factura
-from apps.clientes.models import Cliente
 from .models import Pago, HistorialPago
+
+User = get_user_model()
 
 
 class PagoSerializer(serializers.ModelSerializer):
@@ -87,17 +89,15 @@ class PagoCreateSerializer(serializers.ModelSerializer):
         # El cliente se obtiene del contexto (usuario autenticado)
         request = self.context.get('request')
         if hasattr(request, 'user') and hasattr(request.user, 'id'):
-            # Si es un usuario del sistema (rol cliente)
-            try:
-                cliente = Cliente.objects.get(email=request.user.email)
-                validated_data['pagado_por'] = cliente
-            except Cliente.DoesNotExist:
+            # Si es un usuario autenticado, verificar que sea un cliente
+            if request.user.role == 'Cliente':
+                validated_data['pagado_por'] = request.user
+            else:
                 raise serializers.ValidationError(
-                    "No se encontró un cliente asociado con este usuario"
+                    "Solo los usuarios con rol 'Cliente' pueden realizar pagos"
                 )
         else:
-            # Si es un cliente autenticado con token personalizado
-            validated_data['pagado_por'] = request.user
+            raise serializers.ValidationError("Usuario no autenticado")
         
         return super().create(validated_data)
 

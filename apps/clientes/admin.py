@@ -2,15 +2,15 @@
 """Configuración del admin para la app de clientes."""
 
 from django.contrib import admin
-from .models import Cliente
+from .models import Role
 
 
-@admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
-    """Admin para el modelo Cliente."""
-    list_display = ['id', 'nombre', 'email', 'telefono', 'get_roles', 'activo']
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    """Admin para el modelo Role."""
+    list_display = ['id', 'name']
+    search_fields = ['name']
 
-    def get_roles(self, obj):
-        """Devuelve los roles del cliente como string."""
-        return ", ".join([role.name for role in obj.roles.all()])
-    get_roles.short_description = 'Roles'
+
+# NOTA: El modelo Cliente ha sido migrado al modelo User en apps/usuarios/admin.py
+# Los clientes ahora se administran como usuarios con role='Cliente'

@@ -338,23 +338,17 @@ def mis_pagos_api(request):
 def facturas_pendientes_pago(request):
     """
     API para obtener facturas del cliente que están pendientes de pago.
-    Puede usar tanto autenticación de usuario como de cliente.
+    Solo para usuarios con rol 'Cliente'.
     """
     try:
-        # Determinar el cliente según el tipo de autenticación
-        if hasattr(request.user, 'email'):
-            # Usuario del sistema
-            from apps.clientes.models import Cliente
-            try:
-                cliente = Cliente.objects.get(email=request.user.email)
-            except Cliente.DoesNotExist:
-                return Response(
-                    {'error': 'No se encontró un cliente asociado'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        else:
-            # Cliente autenticado con token personalizado
-            cliente = request.user
+        # El cliente es el usuario autenticado
+        cliente = request.user
+        
+        # Verificar que el usuario autenticado sea un cliente
+        if not hasattr(cliente, 'role') or cliente.role != 'Cliente':
+            return Response({
+                'error': 'Solo accesible para clientes'
+            }, status=status.HTTP_403_FORBIDDEN)
         
         # Obtener facturas emitidas que no estén pagadas
         from apps.facturacion.models import Factura

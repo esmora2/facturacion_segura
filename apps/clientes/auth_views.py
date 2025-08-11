@@ -4,8 +4,10 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .models import Cliente
+from django.contrib.auth import get_user_model
 from .serializers import ClienteCreateSerializer
+
+User = get_user_model()
 
 
 @api_view(['POST'])
@@ -18,20 +20,20 @@ def cliente_register(request):
     serializer = ClienteCreateSerializer(data=request.data)
     if serializer.is_valid():
         try:
-            cliente = serializer.save()
+            user = serializer.save()
             
             return Response({
                 'success': True,
                 'message': 'Cliente registrado exitosamente. Use /api/token/ con su username y password para obtener el token de acceso.',
                 'user_data': {
-                    'id': cliente.id,
-                    'username': cliente.username,
-                    'email': cliente.email,
-                    'nombre': cliente.nombre,
-                    'telefono': cliente.telefono,
-                    'role': cliente.role
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'nombre': user.nombre,
+                    'telefono': user.telefono,
+                    'role': user.role
                 },
-                'next_step': 'POST /api/token/ con {"username": "' + cliente.username + '", "password": "su_password"}'
+                'next_step': 'POST /api/token/ con {"username": "' + user.username + '", "password": "su_password"}'
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:

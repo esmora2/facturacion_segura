@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('validated_at', models.DateTimeField(blank=True, help_text='Fecha y hora de validación', null=True)),
                 ('factura', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='pagos', to='facturacion.factura')),
-                ('pagado_por', models.ForeignKey(help_text='Cliente que realizó el pago', on_delete=django.db.models.deletion.CASCADE, related_name='pagos_realizados', to='clientes.cliente')),
+                ('pagado_por', models.ForeignKey(help_text='Cliente que realizó el pago', on_delete=django.db.models.deletion.CASCADE, related_name='pagos_realizados', to=settings.AUTH_USER_MODEL)),
                 ('validado_por', models.ForeignKey(blank=True, help_text='Usuario que aprobó o rechazó el pago', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='pagos_validados', to=settings.AUTH_USER_MODEL)),
             ],
             options={

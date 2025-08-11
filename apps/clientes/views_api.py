@@ -2,6 +2,7 @@
 
 # Django imports
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 
 # Rest Framework imports
 from rest_framework import viewsets, status
@@ -18,13 +19,14 @@ from apps.auditorias.models import LogAuditoria
 from apps.usuarios.permissions import AdminOnlyPermission, ClientePermission
 
 # Local imports
-from .models import Cliente
 from .serializers import ClienteSerializer
+
+User = get_user_model()
 
 
 class ClienteViewSet(viewsets.ModelViewSet):
     """
-    ViewSet para el módulo de Clientes.
+    ViewSet para el módulo de Clientes (usuarios con role='Cliente').
     - Administrador, Secretario: Acceso completo (CRUD)
     - Ventas: Solo lectura (GET)
     """
@@ -35,14 +37,13 @@ class ClienteViewSet(viewsets.ModelViewSet):
         """
         Filtrar queryset basado en el rol del usuario.
         Administradores, Secretarios y personal de Ventas pueden ver clientes.
-        Optimizado para evitar N+1 queries.
+        Solo retorna usuarios con role='Cliente'.
         """
         user = self.request.user
         if user.is_superuser or user.role in ['Administrador', 'Secretario', 'Ventas']:
-            # Prefetch related para optimizar consultas
-            # Nota: usar 'factura_set' porque es la relación inversa desde Cliente a Factura
-            return Cliente.objects.select_related().prefetch_related('factura_set').all()
-        return Cliente.objects.none()
+            # Filtrar solo usuarios con role='Cliente' y optimizar consultas
+            return User.objects.filter(role='Cliente').select_related().prefetch_related('factura_set')
+        return User.objects.none()
 
     @silk_profile(name='ClienteViewSet.list')
     def list(self, request, *args, **kwargs):
@@ -61,7 +62,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         """
         Endpoint personalizado para eliminar un cliente con motivo de auditoría.
         """
-        cliente = get_object_or_404(Cliente, pk=pk)
+        cliente = get_object_or_404(User, pk=pk, role='Cliente')
         motivo = request.data.get('motivo')
 
         if not motivo:
@@ -112,7 +113,7 @@ def generar_token_cliente(_, cliente_id):
     try:
         from rest_framework.authtoken.models import Token
         
-        cliente = Cliente.objects.get(pk=cliente_id)
+        cliente = User.objects.get(pk=cliente_id, role='Cliente')
         token, created = Token.objects.get_or_create(user=cliente)
         
         return Response({
@@ -121,7 +122,7 @@ def generar_token_cliente(_, cliente_id):
             'created': created,
             'message': 'Cliente puede usar este token con /api/token/ o en headers Authorization: Token <token_key>'
         })
-    except Cliente.DoesNotExist:
+    except User.DoesNotExist:
         return Response({'error': 'Cliente no encontrado'}, status=404)
     except Exception as exc:
         return Response({'error': str(exc)}, status=500)
