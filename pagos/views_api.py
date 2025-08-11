@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from silk.profiling.profiler import silk_profile
 
-# Autenticación personalizada para clientes
-from apps.clientes.authentication import ClienteTokenAuthentication
+# Autenticación estándar de Django REST Framework
+from rest_framework.authentication import TokenAuthentication
 from apps.usuarios.permissions import AdminOnlyPermission
 from apps.auditorias.models import LogAuditoria
 from .permissions import PagoPermission
@@ -245,17 +245,22 @@ Sistema de Facturación Segura
 
 
 @api_view(['POST'])
-@authentication_classes([ClienteTokenAuthentication])
 @permission_classes([IsAuthenticated])
 @silk_profile(name='registrar_pago_cliente')
 def registrar_pago_cliente(request):
     """
-    API para que los clientes registren pagos usando token personalizado.
-    Este endpoint usa autenticación por token de cliente.
+    API para que los clientes registren pagos usando autenticación estándar.
+    Los clientes deben autenticarse usando /api/token/ o con header Authorization: Token <token>.
     """
     try:
-        # El cliente se obtiene del sistema de autenticación personalizado
+        # El cliente se obtiene del usuario autenticado
         cliente = request.user
+        
+        # Verificar que el usuario autenticado sea un cliente
+        if not hasattr(cliente, 'role') or cliente.role != 'Cliente':
+            return Response({
+                'error': 'Solo accesible para clientes'
+            }, status=status.HTTP_403_FORBIDDEN)
         
         # Validar que el request tenga los datos necesarios
         serializer = PagoCreateSerializer(data=request.data, context={'request': request})
@@ -297,14 +302,20 @@ def registrar_pago_cliente(request):
 
 
 @api_view(['GET'])
-@authentication_classes([ClienteTokenAuthentication])
 @permission_classes([IsAuthenticated])
 def mis_pagos_api(request):
     """
-    API para que los clientes consulten sus propios pagos.
+    API para que los clientes consulten sus propios pagos usando autenticación estándar.
     """
     try:
         cliente = request.user
+        
+        # Verificar que el usuario autenticado sea un cliente
+        if not hasattr(cliente, 'role') or cliente.role != 'Cliente':
+            return Response({
+                'error': 'Solo accesible para clientes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         pagos = Pago.objects.filter(pagado_por=cliente).select_related(
             'factura', 'validado_por'
         ).order_by('-fecha_pago')

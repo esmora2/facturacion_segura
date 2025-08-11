@@ -18,7 +18,7 @@ from apps.auditorias.models import LogAuditoria
 from apps.usuarios.permissions import AdminOnlyPermission, ClientePermission
 
 # Local imports
-from .models import Cliente, ClienteToken
+from .models import Cliente
 from .serializers import ClienteSerializer
 
 
@@ -108,11 +108,19 @@ class ClienteViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated, AdminOnlyPermission])
 @silk_profile(name='generar_token_cliente')
 def generar_token_cliente(_, cliente_id):
-    """Genera un token para un cliente específico."""
+    """Genera un token estándar de Django REST Framework para un cliente específico."""
     try:
+        from rest_framework.authtoken.models import Token
+        
         cliente = Cliente.objects.get(pk=cliente_id)
-        token, _ = ClienteToken.objects.get_or_create(cliente=cliente)
-        return Response({'token': token.key, 'cliente_id': cliente.id})
+        token, created = Token.objects.get_or_create(user=cliente)
+        
+        return Response({
+            'token': token.key, 
+            'cliente_id': cliente.id,
+            'created': created,
+            'message': 'Cliente puede usar este token con /api/token/ o en headers Authorization: Token <token_key>'
+        })
     except Cliente.DoesNotExist:
         return Response({'error': 'Cliente no encontrado'}, status=404)
     except Exception as exc:

@@ -11,7 +11,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cliente
-        fields = '__all__'
+        fields = ['id', 'username', 'email', 'nombre', 'telefono', 'activo', 'role', 'roles', 'date_joined']
 
     def get_roles(self, obj):
         """Serializar roles como lista de objetos con name."""
@@ -48,3 +48,28 @@ class ClienteSerializer(serializers.ModelSerializer):
                     role, _ = Role.objects.get_or_create(name=role_data['name'])
                     instance.roles.add(role)
         return instance
+
+
+class ClienteLoginSerializer(serializers.Serializer):
+    """Serializer para login de clientes."""
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=128)
+
+
+class ClienteCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear clientes con password."""
+    password = serializers.CharField(write_only=True, min_length=8)
+    
+    class Meta:
+        model = Cliente
+        fields = ['username', 'email', 'password', 'nombre', 'telefono']
+    
+    def create(self, validated_data):
+        """Crear cliente con password encriptado."""
+        password = validated_data.pop('password')
+        cliente = Cliente(**validated_data)
+        cliente.set_password(password)
+        cliente.role = 'Cliente'
+        cliente.activo = True
+        cliente.save()
+        return cliente
