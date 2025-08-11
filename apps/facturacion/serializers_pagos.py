@@ -1,7 +1,7 @@
 """Serializers para el sistema de pagos."""
 
 from rest_framework import serializers
-from .models_pagos import Pago
+from pagos.models import Pago
 from .models import Factura
 from apps.clientes.models import Cliente
 

@@ -234,7 +234,3 @@ class FacturaItem(models.Model):
             # Recalcular totales de la factura después de eliminar el item
             factura.calcular_totales()
             factura.save()
-
-
-# Importar modelo de pagos
-from .models_pagos import Pago

@@ -11,7 +11,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from silk.profiling.profiler import silk_profile
 
 from .models import Factura
-from .models_pagos import Pago
+from pagos.models import Pago
 from .serializers_pagos import (
     PagoSerializer, 
     PagoCreateSerializer, 
