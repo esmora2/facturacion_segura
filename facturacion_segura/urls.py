@@ -73,6 +73,10 @@ urlpatterns = [
     # URLs de pagos
     path('', include('pagos.urls')),
     
+    
+    # Sistema de pagos
+    path('api/', include('apps.facturacion.urls_pagos')),
+    
     # Rutas API REST Framework
     path('', include(router.urls)),
 ]

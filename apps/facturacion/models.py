@@ -11,6 +11,7 @@ class Factura(models.Model):
     ESTADOS = [
         ('BORRADOR', 'Borrador'),
         ('EMITIDA', 'Emitida'),
+        ('PENDIENTE', 'Pendiente'), # Estado por defecto para facturas emitidas
         ('PAGADA', 'Pagada'),
         ('ANULADA', 'Anulada'),
     ]
@@ -84,8 +85,8 @@ class Factura(models.Model):
         return False
 
     def puede_anular(self):
-        """Una factura puede anularse si está EMITIDA o PAGADA"""
-        return self.estado in ['EMITIDA', 'PAGADA']
+        """Una factura puede anularse si está EMITIDA, PENDIENTE o PAGADA"""
+        return self.estado in ['EMITIDA', 'PENDIENTE', 'PAGADA']
 
     def puede_anular_usuario(self, user):
         """
@@ -108,19 +109,19 @@ class Factura(models.Model):
         return False
 
     def emitir(self):
-        """Cambiar estado a EMITIDA y generar número de factura"""
+        """Cambiar estado a PENDIENTE y generar número de factura"""
         if self.estado == 'BORRADOR':
             # Generar número de factura secuencial
             ultimo_numero = Factura.objects.filter(
                 numero_factura__isnull=False
             ).count()
             self.numero_factura = f"FAC-{(ultimo_numero + 1):06d}"
-            self.estado = 'EMITIDA'
+            self.estado = 'PENDIENTE'  # Cambiado a PENDIENTE por defecto
             self.save()
 
     def marcar_pagada(self):
         """Marcar factura como pagada"""
-        if self.estado == 'EMITIDA':
+        if self.estado in ['EMITIDA', 'PENDIENTE']:
             self.estado = 'PAGADA'
             self.save()
 
@@ -233,3 +234,7 @@ class FacturaItem(models.Model):
             # Recalcular totales de la factura después de eliminar el item
             factura.calcular_totales()
             factura.save()
+
+
+# Importar modelo de pagos
+from .models_pagos import Pago

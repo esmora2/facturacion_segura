@@ -10,7 +10,7 @@ class User(AbstractUser):
     SECRETARIO = 'Secretario'
     BODEGA = 'Bodega'
     VENTAS = 'Ventas'
-    PAGOS = 'Pagos'
+    PAGOS = 'pagos'
 
     ROLE_CHOICES = [
         (ADMINISTRADOR, 'Administrador'),
