@@ -10,12 +10,14 @@ class User(AbstractUser):
     SECRETARIO = 'Secretario'
     BODEGA = 'Bodega'
     VENTAS = 'Ventas'
+    PAGOS = 'pagos'
 
     ROLE_CHOICES = [
         (ADMINISTRADOR, 'Administrador'),
         (SECRETARIO, 'Secretario'),
         (BODEGA, 'Bodega'),
         (VENTAS, 'Ventas'),
+        (PAGOS, 'Pagos'),
     ]
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True, null=True)
