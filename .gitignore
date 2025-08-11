@@ -37,3 +37,6 @@ htmlcov/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+#profiles
+profiles/
