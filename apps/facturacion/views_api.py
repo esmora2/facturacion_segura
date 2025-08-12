@@ -27,6 +27,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para el módulo de Facturación.
     Acceso permitido solo a: Administrador, Ventas
+    Los clientes pueden acceder a view_pdf y download_pdf de sus propias facturas.
     """
     serializer_class = FacturaSerializer
     permission_classes = [IsAuthenticated, FacturaPermission]
@@ -237,8 +238,25 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def view_pdf(self, request, pk=None):
-        """Visualizar PDF de la factura en el navegador"""
+        """
+        Visualizar PDF de la factura en el navegador.
+        Permite acceso a:
+        - Administradores y personal de Ventas: todas las facturas
+        - Clientes: solo sus propias facturas
+        """
         factura = self.get_object()
+        user = request.user
+
+        # Verificar permisos de acceso
+        if user.is_superuser or user.role in ['Administrador', 'Ventas']:
+            # Administradores y Ventas pueden ver cualquier factura
+            pass
+        elif user.role == 'Cliente':
+            # Los clientes solo pueden ver sus propias facturas
+            if factura.cliente != user:
+                raise PermissionDenied("Solo puedes acceder al PDF de tus propias facturas")
+        else:
+            raise PermissionDenied("No tienes permiso para acceder a este recurso")
 
         try:
             # Generar PDF usando la función auxiliar
@@ -260,8 +278,25 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
-        """Descargar PDF de la factura"""
+        """
+        Descargar PDF de la factura.
+        Permite acceso a:
+        - Administradores y personal de Ventas: todas las facturas
+        - Clientes: solo sus propias facturas
+        """
         factura = self.get_object()
+        user = request.user
+
+        # Verificar permisos de acceso
+        if user.is_superuser or user.role in ['Administrador', 'Ventas']:
+            # Administradores y Ventas pueden descargar cualquier factura
+            pass
+        elif user.role == 'Cliente':
+            # Los clientes solo pueden descargar sus propias facturas
+            if factura.cliente != user:
+                raise PermissionDenied("Solo puedes descargar el PDF de tus propias facturas")
+        else:
+            raise PermissionDenied("No tienes permiso para acceder a este recurso")
 
         try:
             # Generar PDF usando la función auxiliar

@@ -107,7 +107,12 @@ class FacturaPermission(BasePermission):
         if request.user.is_superuser:
             return True
 
+        # Administradores y Ventas tienen acceso completo
         if request.user.role in ['Administrador', 'Ventas']:
+            return True
+
+        # Los clientes solo pueden acceder a view_pdf y download_pdf
+        if request.user.role == 'Cliente' and view.action in ['view_pdf', 'download_pdf']:
             return True
 
         raise PermissionDenied(

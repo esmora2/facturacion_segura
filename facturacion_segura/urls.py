@@ -18,6 +18,7 @@ from apps.productos.views import lista_productos
 from apps.productos.views_api import ProductoViewSet
 from apps.facturacion.views import lista_facturas, eliminar_factura
 from apps.facturacion.views_api import FacturaViewSet
+from apps.facturacion.views_pdf import factura_view_pdf, factura_download_pdf
 from apps.usuarios.views_api import me_view, UserViewSet, validate_password, login_api
 from apps.usuarios.api_documentation import api_documentation
 from apps.auditorias.views_api import LogAuditoriaViewSet
@@ -71,6 +72,10 @@ urlpatterns = [
 
     # Endpoint para validar contraseña del usuario autenticado
     path('api/auth/validate-password/', validate_password, name='validate_password'),
+
+    # Endpoints específicos para PDFs de facturas (accesibles por clientes)
+    path('api/facturas/<int:pk>/view-pdf/', factura_view_pdf, name='factura_view_pdf'),
+    path('api/facturas/<int:pk>/download-pdf/', factura_download_pdf, name='factura_download_pdf'),
 
     # Endpoint protegido para facturas de cliente por token personalizado
     path('api/', include('apps.facturacion.urls_cliente_api')),
