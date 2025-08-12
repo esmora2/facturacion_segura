@@ -1,0 +1,1430 @@
+{
+	"info": {
+		"_postman_id": "facturacion-segura-api",
+		"name": "Sistema Facturación Segura - API Completa",
+		"description": "Colección completa de todos los endpoints del Sistema de Facturación Segura. Incluye autenticación, gestión de usuarios, clientes, productos, facturas, pagos y auditorías.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "sistema-facturacion"
+	},
+	"item": [
+		{
+			"name": "🔐 Autenticación",
+			"item": [
+				{
+					"name": "Login API (Mejorado)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login", ""]
+						},
+						"description": "Login mejorado que devuelve token y datos del usuario"
+					}
+				},
+				{
+					"name": "Obtener Token (DRF Estándar)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "token", ""]
+						},
+						"description": "Endpoint estándar de Django REST Framework para obtener token"
+					}
+				},
+				{
+					"name": "Usuario Autenticado (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/me/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "me", ""]
+						},
+						"description": "Obtener información del usuario autenticado"
+					}
+				},
+				{
+					"name": "Validar Contraseña",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"current_password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/validate-password/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "validate-password", ""]
+						},
+						"description": "Validar contraseña del usuario autenticado para operaciones críticas"
+					}
+				}
+			]
+		},
+		{
+			"name": "👥 Gestión de Usuarios (Solo Admin)",
+			"item": [
+				{
+					"name": "Listar Usuarios",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", ""]
+						},
+						"description": "Listar todos los usuarios (Solo Administradores)"
+					}
+				},
+				{
+					"name": "Crear Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"nuevo_usuario\",\n    \"email\": \"usuario@email.com\",\n    \"password\": \"password123\",\n    \"confirm_password\": \"password123\",\n    \"first_name\": \"Nombre\",\n    \"last_name\": \"Apellido\",\n    \"role\": \"Ventas\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", ""]
+						},
+						"description": "Crear nuevo usuario en el sistema"
+					}
+				},
+				{
+					"name": "Obtener Usuario",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", ""]
+						},
+						"description": "Obtener detalles de un usuario específico"
+					}
+				},
+				{
+					"name": "Actualizar Usuario",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"usuario_actualizado\",\n    \"email\": \"nuevo@email.com\",\n    \"first_name\": \"Nuevo Nombre\",\n    \"last_name\": \"Nuevo Apellido\",\n    \"role\": \"Secretario\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", ""]
+						},
+						"description": "Actualizar usuario completo"
+					}
+				},
+				{
+					"name": "Actualizar Usuario Parcial",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"Bodega\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", ""]
+						},
+						"description": "Actualizar campos específicos del usuario"
+					}
+				},
+				{
+					"name": "Eliminar Usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", ""]
+						},
+						"description": "Eliminar usuario del sistema"
+					}
+				},
+				{
+					"name": "Activar/Desactivar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/toggle_active/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", "toggle_active", ""]
+						},
+						"description": "Alternar estado activo/inactivo del usuario"
+					}
+				},
+				{
+					"name": "Cambiar Rol de Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"Administrador\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/change_role/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", "change_role", ""]
+						},
+						"description": "Cambiar el rol de un usuario"
+					}
+				},
+				{
+					"name": "Obtener Roles Disponibles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/roles/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "roles", ""]
+						},
+						"description": "Obtener lista de roles disponibles en el sistema"
+					}
+				},
+				{
+					"name": "Eliminar Usuario con Motivo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"motivo\": \"Usuario inactivo por más de 6 meses\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/eliminar-con-motivo/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", "eliminar-con-motivo", ""]
+						},
+						"description": "Eliminar usuario registrando motivo en auditoría"
+					}
+				},
+				{
+					"name": "Generar Token de Permiso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accion\": \"eliminar_producto\",\n    \"motivo\": \"Autorización especial para limpieza de inventario\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/usuarios/{{user_id}}/generar-token-permiso/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "usuarios", "{{user_id}}", "generar-token-permiso", ""]
+						},
+						"description": "Generar token temporal para acciones que requieren autorización especial"
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍💼 Gestión de Clientes",
+			"item": [
+				{
+					"name": "Listar Clientes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/clientes/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", ""]
+						},
+						"description": "Listar todos los clientes (Admin, Secretario, Ventas)"
+					}
+				},
+				{
+					"name": "Crear Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"cliente_nuevo\",\n    \"email\": \"cliente@email.com\",\n    \"nombre\": \"Juan Pérez\",\n    \"telefono\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/clientes/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", ""]
+						},
+						"description": "Crear nuevo cliente (Solo Admin, Secretario)"
+					}
+				},
+				{
+					"name": "Obtener Cliente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/clientes/{{cliente_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", "{{cliente_id}}", ""]
+						},
+						"description": "Obtener detalles de un cliente específico"
+					}
+				},
+				{
+					"name": "Actualizar Cliente",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"cliente_actualizado\",\n    \"email\": \"nuevo@email.com\",\n    \"nombre\": \"Juan Carlos Pérez\",\n    \"telefono\": \"+1234567891\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/clientes/{{cliente_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", "{{cliente_id}}", ""]
+						},
+						"description": "Actualizar cliente completo (Solo Admin, Secretario)"
+					}
+				},
+				{
+					"name": "Actualizar Cliente Parcial",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"telefono\": \"+1234567892\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/clientes/{{cliente_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", "{{cliente_id}}", ""]
+						},
+						"description": "Actualizar campos específicos del cliente"
+					}
+				},
+				{
+					"name": "Eliminar Cliente",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/clientes/{{cliente_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", "{{cliente_id}}", ""]
+						},
+						"description": "Eliminar cliente del sistema"
+					}
+				},
+				{
+					"name": "Eliminar Cliente con Motivo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"motivo\": \"Cliente solicitó eliminación de datos personales\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/clientes/{{cliente_id}}/eliminar-con-motivo/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "clientes", "{{cliente_id}}", "eliminar-con-motivo", ""]
+						},
+						"description": "Eliminar cliente registrando motivo en auditoría"
+					}
+				},
+				{
+					"name": "Generar Token para Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/clientes/{{cliente_id}}/generar-token/",
+							"host": ["{{base_url}}"],
+							"path": ["clientes", "{{cliente_id}}", "generar-token", ""]
+						},
+						"description": "Generar token de autenticación para un cliente específico (Solo Admin)"
+					}
+				},
+				{
+					"name": "Registro Público de Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"cliente_autoregistro\",\n    \"email\": \"autoregistro@email.com\",\n    \"password\": \"password123\",\n    \"nombre\": \"Cliente Autoregistro\",\n    \"telefono\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cliente/register/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cliente", "register", ""]
+						},
+						"description": "Registro público para nuevos clientes (sin autenticación)"
+					}
+				},
+				{
+					"name": "Perfil del Cliente Autenticado",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{cliente_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/cliente/me/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cliente", "me", ""]
+						},
+						"description": "Obtener perfil del cliente autenticado"
+					}
+				}
+			]
+		},
+		{
+			"name": "📦 Gestión de Productos",
+			"item": [
+				{
+					"name": "Listar Productos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/productos/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", ""]
+						},
+						"description": "Listar todos los productos (Admin, Bodega, Ventas)"
+					}
+				},
+				{
+					"name": "Crear Producto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Producto Nuevo\",\n    \"descripcion\": \"Descripción del producto\",\n    \"precio\": 25.99,\n    \"stock\": 100,\n    \"categoria\": \"Electrónicos\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/productos/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", ""]
+						},
+						"description": "Crear nuevo producto (Solo Admin, Bodega)"
+					}
+				},
+				{
+					"name": "Obtener Producto",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/productos/{{producto_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", "{{producto_id}}", ""]
+						},
+						"description": "Obtener detalles de un producto específico"
+					}
+				},
+				{
+					"name": "Actualizar Producto",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Producto Actualizado\",\n    \"descripcion\": \"Nueva descripción\",\n    \"precio\": 29.99,\n    \"stock\": 85,\n    \"categoria\": \"Electrónicos\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/productos/{{producto_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", "{{producto_id}}", ""]
+						},
+						"description": "Actualizar producto completo (Solo Admin, Bodega)"
+					}
+				},
+				{
+					"name": "Actualizar Producto Parcial",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stock\": 75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/productos/{{producto_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", "{{producto_id}}", ""]
+						},
+						"description": "Actualizar campos específicos del producto"
+					}
+				},
+				{
+					"name": "Eliminar Producto",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/productos/{{producto_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", "{{producto_id}}", ""]
+						},
+						"description": "Eliminar producto del sistema"
+					}
+				},
+				{
+					"name": "Eliminar Producto con Motivo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"motivo\": \"Producto descontinuado por el fabricante\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/productos/{{producto_id}}/eliminar-con-motivo/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "productos", "{{producto_id}}", "eliminar-con-motivo", ""]
+						},
+						"description": "Eliminar producto registrando motivo en auditoría"
+					}
+				}
+			]
+		},
+		{
+			"name": "🧾 Gestión de Facturas",
+			"item": [
+				{
+					"name": "Listar Facturas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", ""]
+						},
+						"description": "Listar todas las facturas (Admin, Ventas)"
+					}
+				},
+				{
+					"name": "Crear Factura",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cliente\": {{cliente_id}},\n    \"items\": [\n        {\n            \"producto\": {{producto_id}},\n            \"cantidad\": 2\n        }\n    ],\n    \"estado\": \"BORRADOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/facturas/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", ""]
+						},
+						"description": "Crear nueva factura"
+					}
+				},
+				{
+					"name": "Obtener Factura",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", ""]
+						},
+						"description": "Obtener detalles de una factura específica"
+					}
+				},
+				{
+					"name": "Actualizar Factura",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cliente\": {{cliente_id}},\n    \"items\": [\n        {\n            \"producto\": {{producto_id}},\n            \"cantidad\": 3\n        }\n    ],\n    \"estado\": \"BORRADOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", ""]
+						},
+						"description": "Actualizar factura completa (solo BORRADOR)"
+					}
+				},
+				{
+					"name": "Actualizar Factura Parcial",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"estado\": \"BORRADOR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", ""]
+						},
+						"description": "Actualizar campos específicos de la factura"
+					}
+				},
+				{
+					"name": "Eliminar Factura",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", ""]
+						},
+						"description": "Eliminar factura (solo BORRADOR, solo creador/admin)"
+					}
+				},
+				{
+					"name": "Emitir Factura",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/emitir/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "emitir", ""]
+						},
+						"description": "Emitir factura (BORRADOR → EMITIDA, descontar stock)"
+					}
+				},
+				{
+					"name": "Marcar Factura como Pagada",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/marcar_pagada/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "marcar_pagada", ""]
+						},
+						"description": "Marcar factura como pagada (EMITIDA → PAGADA)"
+					}
+				},
+				{
+					"name": "Anular Factura",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/anular/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "anular", ""]
+						},
+						"description": "Anular factura (restituir stock automáticamente)"
+					}
+				},
+				{
+					"name": "Enviar PDF por Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/send_pdf/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "send_pdf", ""]
+						},
+						"description": "Enviar PDF de la factura por correo electrónico al cliente"
+					}
+				},
+				{
+					"name": "Ver PDF en Navegador",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/view-pdf/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "view-pdf", ""]
+						},
+						"description": "Visualizar PDF de la factura en el navegador (Admin/Ventas: todas, Clientes: solo propias)"
+					}
+				},
+				{
+					"name": "Descargar PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/download-pdf/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "download-pdf", ""]
+						},
+						"description": "Descargar PDF de la factura (Admin/Ventas: todas, Clientes: solo propias)"
+					}
+				},
+				{
+					"name": "Métricas de Facturas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/metrics/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "metrics", ""]
+						},
+						"description": "Obtener métricas y estadísticas de facturas de los últimos 7 días"
+					}
+				},
+				{
+					"name": "Eliminar Factura con Motivo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"motivo\": \"Factura creada por error\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/facturas/{{factura_id}}/eliminar-con-motivo/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "{{factura_id}}", "eliminar-con-motivo", ""]
+						},
+						"description": "Eliminar factura registrando motivo en auditoría"
+					}
+				},
+				{
+					"name": "Facturas del Cliente (Token Cliente)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{cliente_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/facturas/cliente/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "facturas", "cliente", ""]
+						},
+						"description": "Obtener facturas del cliente autenticado"
+					}
+				}
+			]
+		},
+		{
+			"name": "💳 Gestión de Pagos",
+			"item": [
+				{
+					"name": "Listar Pagos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", ""]
+						},
+						"description": "Listar todos los pagos (Admin, Pagos)"
+					}
+				},
+				{
+					"name": "Crear Pago",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"factura\": {{factura_id}},\n    \"monto\": 150.00,\n    \"tipo_pago\": \"transferencia\",\n    \"comprobante\": \"TRANS123456\",\n    \"observaciones\": \"Pago por transferencia bancaria\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/pagos/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", ""]
+						},
+						"description": "Crear nuevo pago (Admin, Pagos)"
+					}
+				},
+				{
+					"name": "Obtener Pago",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/{{pago_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "{{pago_id}}", ""]
+						},
+						"description": "Obtener detalles de un pago específico"
+					}
+				},
+				{
+					"name": "Actualizar Pago",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"factura\": {{factura_id}},\n    \"monto\": 175.00,\n    \"tipo_pago\": \"transferencia\",\n    \"comprobante\": \"TRANS123456\",\n    \"observaciones\": \"Pago actualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/pagos/{{pago_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "{{pago_id}}", ""]
+						},
+						"description": "Actualizar pago completo"
+					}
+				},
+				{
+					"name": "Eliminar Pago",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/{{pago_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "{{pago_id}}", ""]
+						},
+						"description": "Eliminar pago del sistema"
+					}
+				},
+				{
+					"name": "Pagos Pendientes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/pendientes/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "pendientes", ""]
+						},
+						"description": "Listar solo pagos pendientes de validación"
+					}
+				},
+				{
+					"name": "Validar Pago (Aprobar/Rechazar)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accion\": \"aprobar\",\n    \"motivo\": \"Comprobante verificado correctamente\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/pagos/{{pago_id}}/validar/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "{{pago_id}}", "validar", ""]
+						},
+						"description": "Validar pago (aprobar o rechazar) - Solo Admin/Pagos"
+					}
+				},
+				{
+					"name": "Estadísticas de Pagos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/estadisticas/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "estadisticas", ""]
+						},
+						"description": "Obtener estadísticas generales de pagos"
+					}
+				},
+				{
+					"name": "Registrar Pago (Cliente)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{cliente_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"factura\": {{factura_id}},\n    \"monto\": 100.00,\n    \"tipo_pago\": \"efectivo\",\n    \"comprobante\": \"EF123456\",\n    \"observaciones\": \"Pago en efectivo\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cliente/registrar-pago/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cliente", "registrar-pago", ""]
+						},
+						"description": "Registrar nuevo pago como cliente autenticado"
+					}
+				},
+				{
+					"name": "Mis Pagos (Cliente)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{cliente_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/cliente/mis-pagos/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cliente", "mis-pagos", ""]
+						},
+						"description": "Ver mis propios pagos como cliente autenticado"
+					}
+				},
+				{
+					"name": "Facturas Pendientes de Pago (Cliente)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{cliente_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/cliente/facturas-pendientes/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cliente", "facturas-pendientes", ""]
+						},
+						"description": "Ver facturas pendientes de pago como cliente autenticado"
+					}
+				}
+			]
+		},
+		{
+			"name": "📋 Auditorías y Logs",
+			"item": [
+				{
+					"name": "Listar Logs de Auditoría",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/logs/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", ""]
+						},
+						"description": "Listar todos los registros de auditoría (Solo lectura)"
+					}
+				},
+				{
+					"name": "Obtener Log de Auditoría",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/logs/{{log_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "{{log_id}}", ""]
+						},
+						"description": "Obtener detalles de un registro de auditoría específico"
+					}
+				}
+			]
+		},
+		{
+			"name": "📖 Documentación",
+			"item": [
+				{
+					"name": "Documentación de la API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/docs/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "docs", ""]
+						},
+						"description": "Obtener documentación completa de todos los endpoints"
+					}
+				},
+				{
+					"name": "Documentación de Pagos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/pagos/docs/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "pagos", "docs", ""]
+						},
+						"description": "Obtener documentación específica del módulo de pagos"
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "cliente_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "cliente_id",
+			"value": "64",
+			"type": "string"
+		},
+		{
+			"key": "producto_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "factura_id",
+			"value": "27",
+			"type": "string"
+		},
+		{
+			"key": "pago_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "log_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
