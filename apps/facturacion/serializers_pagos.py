@@ -30,7 +30,7 @@ class PagoSerializer(serializers.ModelSerializer):
         """Valida que la factura pueda recibir pagos."""
         # Estados válidos para pago: PENDIENTE y EMITIDA
         estados_validos = ['PENDIENTE', 'EMITIDA']
-        
+
         if value.estado == 'PAGADA':
             raise serializers.ValidationError("La factura ya está pagada")
         if value.estado == 'ANULADA':
@@ -62,7 +62,7 @@ class PagoSerializer(serializers.ModelSerializer):
                 factura=data['factura'],
                 estado='PENDIENTE'
             ).exclude(pk=self.instance.pk if self.instance else None)
-            
+
             if pagos_pendientes.exists():
                 raise serializers.ValidationError({
                     'factura': "La factura ya tiene pagos pendientes de validación"
@@ -94,13 +94,13 @@ class PagoSerializer(serializers.ModelSerializer):
             validated_data.pop('factura', None)
             validated_data.pop('monto', None)
             validated_data.pop('metodo_pago', None)
-            
+
         return super().update(instance, validated_data)
 
 
 class PagoCreateSerializer(serializers.ModelSerializer):
     """Serializer específico para crear pagos desde API de cliente."""
-    
+
     class Meta:
         model = Pago
         fields = [
@@ -115,7 +115,7 @@ class PagoCreateSerializer(serializers.ModelSerializer):
         """Valida que la factura pueda recibir pagos."""
         # Estados válidos para pago: PENDIENTE y EMITIDA
         estados_validos = ['PENDIENTE', 'EMITIDA']
-        
+
         if value.estado == 'PAGADA':
             raise serializers.ValidationError("La factura ya está pagada")
         if value.estado == 'ANULADA':
@@ -144,10 +144,10 @@ class PagoCreateSerializer(serializers.ModelSerializer):
 
 class PagoValidacionSerializer(serializers.Serializer):
     """Serializer para validar (aprobar/rechazar) pagos."""
-    
+
     accion = serializers.ChoiceField(choices=['aprobar', 'rechazar'])
     motivo = serializers.CharField(
-        required=False, 
+        required=False,
         allow_blank=True,
         help_text="Motivo del rechazo (opcional para aprobación)"
     )
@@ -163,10 +163,10 @@ class PagoValidacionSerializer(serializers.Serializer):
 
 class FacturaClienteSerializer(serializers.ModelSerializer):
     """Serializer para mostrar facturas del cliente con información de pagos."""
-    
+
     pagos_count = serializers.IntegerField(source='pagos.count', read_only=True)
     tiene_pagos_pendientes = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Factura
         fields = [
@@ -181,7 +181,7 @@ class FacturaClienteSerializer(serializers.ModelSerializer):
             'tiene_pagos_pendientes',
         ]
         read_only_fields = '__all__'
-    
+
     def get_tiene_pagos_pendientes(self, obj):
         """Verifica si la factura tiene pagos pendientes."""
         return obj.pagos.filter(estado='pendiente').exists()

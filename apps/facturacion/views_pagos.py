@@ -13,8 +13,8 @@ from silk.profiling.profiler import silk_profile
 from .models import Factura
 from pagos.models import Pago
 from .serializers_pagos import (
-    PagoSerializer, 
-    PagoCreateSerializer, 
+    PagoSerializer,
+    PagoCreateSerializer,
     PagoValidacionSerializer,
     FacturaClienteSerializer
 )
@@ -35,7 +35,7 @@ class PagoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filtrar pagos según el rol del usuario."""
         user = self.request.user
-        
+
         if user.is_superuser or user.role == 'Administrador':
             # Administradores ven todos los pagos
             return Pago.objects.select_related(
@@ -69,10 +69,10 @@ class PagoViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("No tienes permiso para validar pagos")
 
         pago = get_object_or_404(Pago, pk=pk)
-        
+
         if not pago.puede_validar():
             return Response(
-                {'error': 'El pago no está en estado pendiente'}, 
+                {'error': 'El pago no está en estado pendiente'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -95,15 +95,15 @@ class PagoViewSet(viewsets.ModelViewSet):
                     })
             except ValueError as e:
                 return Response(
-                    {'error': str(e)}, 
+                    {'error': str(e)},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 """
-NOTA: Las funciones registrar_pago_cliente y facturas_cliente en este archivo 
+NOTA: Las funciones registrar_pago_cliente y facturas_cliente en este archivo
 están OBSOLETAS y han sido reemplazadas por las versiones en pagos/views_api.py
 que usan autenticación estándar de Django.
 
@@ -119,7 +119,7 @@ Ahora se usa el sistema estándar: /api/token/ + Authorization: Token <token>
 #     """OBSOLETO - Ver pagos/views_api.py"""
 #     pass
 
-# @api_view(['GET'])  
+# @api_view(['GET'])
 # @permission_classes([AllowClientTokenAuth])
 # def facturas_cliente(request):
 #     """OBSOLETO - Ver pagos/views_api.py"""
@@ -140,7 +140,7 @@ def pagos_pendientes(request):
     pagos = Pago.objects.filter(estado='pendiente').select_related(
         'factura', 'pagado_por'
     ).order_by('-created_at')
-    
+
     serializer = PagoSerializer(pagos, many=True)
     return Response({
         'total_pendientes': pagos.count(),

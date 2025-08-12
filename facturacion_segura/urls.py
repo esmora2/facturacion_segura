@@ -56,14 +56,14 @@ urlpatterns = [
 
     # Endpoint para obtener token (USADO POR CLIENTES Y USUARIOS)
     path('api/token/', obtain_auth_token, name='api_token_auth'),
-    
+
     # Endpoint mejorado para login
     path('api/auth/login/', login_api, name='api_login'),
-    
+
     # Endpoints de autenticación para clientes (solo registro y perfil)
     path('api/cliente/register/', cliente_register, name='cliente_register'),
     path('api/cliente/me/', cliente_me, name='cliente_me'),
-    
+
     # Documentación de la API
     path('api/docs/', api_documentation, name='api_documentation'),
 
@@ -79,10 +79,10 @@ urlpatterns = [
 
     # Endpoint protegido para facturas de cliente por token personalizado
     path('api/', include('apps.facturacion.urls_cliente_api')),
-    
+
     # URLs de pagos
     path('', include('pagos.urls')),
-    
+
     # Rutas API REST Framework
     path('', include(router.urls)),
 ]
