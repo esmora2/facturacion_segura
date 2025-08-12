@@ -8,30 +8,14 @@ from django.contrib.auth import get_user_model
 
 
 class PagoSerializer(serializers.ModelSerializer):
-    """Serializer para el modelo Pago."""
-    
-    factura_numero = serializers.CharField(source='factura.numero_factura', read_only=True)
-    cliente_nombre = serializers.CharField(source='pagado_por.nombre', read_only=True)
-    validador_nombre = serializers.CharField(source='validado_por.get_full_name', read_only=True)
-    
+    """Serializer para mostrar datos de pagos."""
+    factura_numero = serializers.CharField(source='factura.numero', read_only=True)
+    cliente_nombre = serializers.SerializerMethodField()
+    validador_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = Pago
-        fields = [
-            'id',
-            'factura',
-            'factura_numero',
-            'tipo_pago',
-            'monto',
-            'numero_transaccion',
-            'observacion',
-            'estado',
-            'pagado_por',
-            'cliente_nombre',
-            'validado_por',
-            'validador_nombre',
-            'created_at',
-            'validated_at',
-        ]
+        fields = '__all__'
         read_only_fields = [
             'id',
             'factura_numero',
@@ -54,7 +38,7 @@ class PagoSerializer(serializers.ModelSerializer):
         if value.estado == 'BORRADOR':
             raise serializers.ValidationError("No se puede pagar una factura en borrador")
         if value.estado not in estados_validos:
-            raise serializers.ValidationError(f"La factura debe estar en estado PENDIENTE o EMITIDA para poder recibir pagos")
+            raise serializers.ValidationError("La factura debe estar en estado PENDIENTE o EMITIDA para poder recibir pagos")
         return value
 
     def validate_monto(self, value):
@@ -69,17 +53,49 @@ class PagoSerializer(serializers.ModelSerializer):
         if 'factura' in data and 'monto' in data:
             if data['monto'] != data['factura'].total:
                 raise serializers.ValidationError({
-                    'monto': f"El monto debe coincidir con el total de la factura ({data['factura'].total})"
+                    'monto': "El monto debe coincidir con el total de la factura"
                 })
-        
-        # Verificar que el cliente que paga sea el dueño de la factura
-        if 'pagado_por' in data and 'factura' in data:
-            if data['pagado_por'] != data['factura'].cliente:
+
+        # Verificar que la factura no tenga pagos pendientes
+        if 'factura' in data:
+            pagos_pendientes = Pago.objects.filter(
+                factura=data['factura'],
+                estado='PENDIENTE'
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if pagos_pendientes.exists():
                 raise serializers.ValidationError({
-                    'pagado_por': "Solo el cliente dueño de la factura puede realizar el pago"
+                    'factura': "La factura ya tiene pagos pendientes de validación"
                 })
-        
+
         return data
+
+    def get_cliente_nombre(self, obj):
+        """Obtiene el nombre del cliente desde la factura."""
+        if obj.factura and obj.factura.cliente:
+            return f"{obj.factura.cliente.nombre} {obj.factura.cliente.apellido or ''}".strip()
+        return None
+
+    def get_validador_nombre(self, obj):
+        """Obtiene el nombre del validador."""
+        if obj.validado_por:
+            return f"{obj.validado_por.first_name} {obj.validado_por.last_name}".strip()
+        return None
+
+    def create(self, validated_data):
+        """Crear un nuevo pago."""
+        validated_data['estado'] = 'PENDIENTE'
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """Actualizar pago existente."""
+        # Solo permitir actualizar ciertos campos si el pago está pendiente
+        if instance.estado != 'PENDIENTE':
+            validated_data.pop('factura', None)
+            validated_data.pop('monto', None)
+            validated_data.pop('metodo_pago', None)
+            
+        return super().update(instance, validated_data)
 
 
 class PagoCreateSerializer(serializers.ModelSerializer):
@@ -107,7 +123,7 @@ class PagoCreateSerializer(serializers.ModelSerializer):
         if value.estado == 'BORRADOR':
             raise serializers.ValidationError("No se puede pagar una factura en borrador")
         if value.estado not in estados_validos:
-            raise serializers.ValidationError(f"La factura debe estar en estado PENDIENTE o EMITIDA para poder recibir pagos")
+            raise serializers.ValidationError("La factura debe estar en estado PENDIENTE o EMITIDA para poder recibir pagos")
         return value
 
     def validate_monto(self, value):
@@ -121,7 +137,7 @@ class PagoCreateSerializer(serializers.ModelSerializer):
         if 'factura' in data and 'monto' in data:
             if data['monto'] != data['factura'].total:
                 raise serializers.ValidationError({
-                    'monto': f"El monto debe coincidir con el total de la factura ({data['factura'].total})"
+                    'monto': "El monto debe coincidir con el total de la factura"
                 })
         return data
 

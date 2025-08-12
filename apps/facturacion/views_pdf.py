@@ -43,7 +43,7 @@ def factura_view_pdf(request, pk):
     try:
         # Usar la función auxiliar del ViewSet para generar PDF
         viewset = FacturaViewSet()
-        pdf = viewset._generar_pdf_factura(factura)
+        pdf = viewset.generar_pdf_factura(factura)
 
         # Crear respuesta HTTP con el PDF
         response = HttpResponse(pdf, content_type='application/pdf')
@@ -90,7 +90,7 @@ def factura_download_pdf(request, pk):
     try:
         # Usar la función auxiliar del ViewSet para generar PDF
         viewset = FacturaViewSet()
-        pdf = viewset._generar_pdf_factura(factura)
+        pdf = viewset.generar_pdf_factura(factura)
 
         # Crear respuesta HTTP con el PDF
         response = HttpResponse(pdf, content_type='application/pdf')

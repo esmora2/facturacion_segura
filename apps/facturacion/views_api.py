@@ -34,15 +34,19 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Optimizar queryset para evitar N+1 queries.
+        Filtrar queryset basado en el rol del usuario y optimizar para evitar N+1 queries.
+        Solo Administradores y personal de Ventas pueden ver facturas.
         """
-        return Factura.objects.select_related(
-            'cliente', 'creador'
-        ).prefetch_related(
-            'items__producto'
-        ).all()
+        user = self.request.user
+        if user.is_superuser or user.role in ['Administrador', 'Ventas']:
+            return Factura.objects.select_related(
+                'cliente', 'creador'
+            ).prefetch_related(
+                'items__producto'
+            ).all()
+        return Factura.objects.none()
 
-    def _generar_pdf_factura(self, factura):
+    def generar_pdf_factura(self, factura):
         """
         Función auxiliar para generar el PDF de una factura.
         Retorna el PDF como bytes.
@@ -136,16 +140,6 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         return pdf
 
-    def get_queryset(self):
-        """
-        Filtrar queryset basado en el rol del usuario.
-        Solo Administradores y personal de Ventas pueden ver facturas.
-        """
-        user = self.request.user
-        if user.is_superuser or user.role in ['Administrador', 'Ventas']:
-            return Factura.objects.all()
-        return Factura.objects.none()
-
     def list(self, request, *args, **kwargs):
         user = self.request.user
         if not (user.is_superuser or user.role in ['Administrador', 'Ventas']):
@@ -217,7 +211,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         try:
             # Generar PDF usando la función auxiliar
-            pdf = self._generar_pdf_factura(factura)
+            pdf = self.generar_pdf_factura(factura)
 
             # Enviar correo
             email = EmailMessage(
@@ -260,7 +254,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         try:
             # Generar PDF usando la función auxiliar
-            pdf = self._generar_pdf_factura(factura)
+            pdf = self.generar_pdf_factura(factura)
 
             # Crear respuesta HTTP con el PDF
             response = HttpResponse(pdf, content_type='application/pdf')
@@ -300,7 +294,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         try:
             # Generar PDF usando la función auxiliar
-            pdf = self._generar_pdf_factura(factura)
+            pdf = self.generar_pdf_factura(factura)
 
             # Crear respuesta HTTP con el PDF
             response = HttpResponse(pdf, content_type='application/pdf')

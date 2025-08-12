@@ -20,8 +20,8 @@ class UnifiedTokenAuthentication(TokenAuthentication):
         
         try:
             token = model.objects.select_related('user').get(key=key)
-        except model.DoesNotExist:
-            raise exceptions.AuthenticationFailed('Token inválido.')
+        except model.DoesNotExist as exc:
+            raise exceptions.AuthenticationFailed('Token inválido.') from exc
 
         if not token.user.is_active:
             raise exceptions.AuthenticationFailed('Usuario inactivo o eliminado.')
@@ -40,8 +40,8 @@ class ClienteOrUserTokenAuthentication(TokenAuthentication):
         
         try:
             token = model.objects.select_related('user').get(key=key)
-        except model.DoesNotExist:
-            raise exceptions.AuthenticationFailed('Token inválido.')
+        except model.DoesNotExist as exc:
+            raise exceptions.AuthenticationFailed('Token inválido.') from exc
         
         user = token.user
         
