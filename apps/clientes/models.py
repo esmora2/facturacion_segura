@@ -24,4 +24,3 @@ class Role(models.Model):
 
 # NOTA: El modelo Cliente ha sido migrado al modelo User en apps/usuarios/models.py
 # Los clientes ahora son usuarios con role='Cliente'
-# Todos los datos de clientes han sido migrados exitosamente al modelo User

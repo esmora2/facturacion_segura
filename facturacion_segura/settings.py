@@ -140,6 +140,12 @@ SILKY_MAX_REQUEST_BODY_SIZE = -1  # Sin límite en el tamaño del body
 SILKY_MAX_RESPONSE_BODY_SIZE = -1  # Sin límite en el tamaño de la respuesta
 SILKY_AUTHENTICATION = True  # Requiere autenticación para acceder a Silk
 SILKY_AUTHORISATION = True  # Requiere autorización
+SILKY_PYTHON_PROFILER = True  # Profiler de Python activo
+SILKY_PYTHON_PROFILER_BINARY = True  # Profiler binario activo
+SILKY_PYTHON_PROFILER_RESULT_PATH = '/tmp/'  # Ruta temporal para profiler
+SILKY_MAX_REQUEST_BODY_SIZE = -1  # Sin límite en request body
+SILKY_MAX_RECORDED_REQUESTS = 100  # Limitar requests grabadas para evitar sobrecarga
+SILKY_INTERCEPT_PERCENT = 100  # Interceptar 100% de requests
 
 def silky_permissions_check(user):
     """Función para verificar permisos de Silk - solo superusuarios"""
