@@ -8,6 +8,7 @@ from .serializers import LogAuditoriaSerializer
 
 
 class LogAuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
+    swagger_tags = ['📋 Auditorías y Logs']
     """API para consultar registros del log de auditoría (solo lectura)."""
     queryset = LogAuditoria.objects.all().order_by('-fecha_eliminacion')
     serializer_class = LogAuditoriaSerializer

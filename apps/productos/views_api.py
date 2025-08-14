@@ -20,6 +20,7 @@ from .serializers import ProductoSerializer
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
+    swagger_tags = ['📦 Gestión de Productos']
     """
     ViewSet para el módulo de Productos.
     - Administrador, Bodega: Acceso completo (CRUD)

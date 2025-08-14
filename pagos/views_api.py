@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import api_view, permission_classes, action, authentication_classes
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
@@ -24,6 +25,7 @@ from .serializers import (
 
 
 class PagoViewSet(viewsets.ModelViewSet):
+    swagger_tags = ['💳 Gestión de Pagos']
     """
     ViewSet para la gestión completa de pagos.
     Solo administradores y usuarios con rol Pagos pueden acceder.
@@ -244,6 +246,7 @@ Sistema de Facturación Segura
             print(f"Error enviando email de rechazo: {e}")
 
 
+@swagger_auto_schema(method='post', tags=['💳 Gestión de Pagos'])
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @silk_profile(name='registrar_pago_cliente')
@@ -301,6 +304,7 @@ def registrar_pago_cliente(request):
         )
 
 
+@swagger_auto_schema(method='get', tags=['💳 Gestión de Pagos'])
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def mis_pagos_api(request):
@@ -333,6 +337,7 @@ def mis_pagos_api(request):
         )
 
 
+@swagger_auto_schema(method='get', tags=['💳 Gestión de Pagos'])
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def facturas_pendientes_pago(request):

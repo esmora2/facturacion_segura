@@ -25,6 +25,7 @@ User = get_user_model()
 
 
 class ClienteViewSet(viewsets.ModelViewSet):
+    swagger_tags = ['👨‍💼 Gestión de Clientes']
     """
     ViewSet para el módulo de Clientes (usuarios con role='Cliente').
     - Administrador, Secretario: Acceso completo (CRUD)
@@ -105,6 +106,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+from drf_yasg.utils import swagger_auto_schema
+
+@swagger_auto_schema(method='post', tags=['👨‍💼 Gestión de Clientes'])
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, AdminOnlyPermission])
 @silk_profile(name='generar_token_cliente')

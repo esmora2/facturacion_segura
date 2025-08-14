@@ -24,6 +24,7 @@ from apps.usuarios.permissions import FacturaPermission
 from apps.auditorias.models import LogAuditoria
 
 class FacturaViewSet(viewsets.ModelViewSet):
+    swagger_tags = ['🧾 Gestión de Facturas']
     """
     ViewSet para el módulo de Facturación.
     Acceso permitido solo a: Administrador, Ventas

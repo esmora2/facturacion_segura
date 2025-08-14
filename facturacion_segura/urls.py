@@ -23,6 +23,20 @@ from apps.usuarios.views_api import me_view, UserViewSet, validate_password, log
 from apps.usuarios.api_documentation import api_documentation
 from apps.auditorias.views_api import LogAuditoriaViewSet
 
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="API Facturación Segura",
+        default_version='v1',
+        description="Documentación de las APIs",
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 router = routers.DefaultRouter()
 router.register(r'api/clientes', ClienteViewSet, basename='cliente')
 router.register(r'api/productos', ProductoViewSet, basename='producto')
@@ -85,4 +99,8 @@ urlpatterns = [
 
     # Rutas API REST Framework
     path('', include(router.urls)),
+
+    # Swagger UI y Redoc
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

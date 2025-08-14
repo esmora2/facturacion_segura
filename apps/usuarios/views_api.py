@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework import viewsets, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, action
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -17,6 +18,7 @@ from .serializers import UserSerializer
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+@swagger_auto_schema(method='get', tags=['🔐 Autenticación'])
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
@@ -26,6 +28,7 @@ def me_view(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(method='post', tags=['🔐 Autenticación'])
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def validate_password(request):
@@ -208,6 +211,7 @@ class UserViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(method='post', tags=['🔐 Autenticación'])
 @api_view(['POST'])
 def login_api(request):
     """

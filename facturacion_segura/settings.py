@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'apps.auditorias',
     'pagos',
     'silk',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
